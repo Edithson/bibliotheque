@@ -11,18 +11,14 @@
     <div id="lamp" aria-hidden="true"></div>
 
     <div>
-        {{-- Navigation bar épurée --}}
-        <nav class="border-b border-[#4a2c17] bg-[#1b1209]/95 backdrop-blur-md px-4 py-2.5 text-sm sticky top-0 z-50">
+        {{-- Navigation bar intelligente qui s'efface au scroll down et réapparaît au scroll up --}}
+        <nav id="navbar" class="border-b border-[#4a2c17] bg-[#1b1209]/95 backdrop-blur-md px-4 py-2.5 text-sm fixed top-0 left-0 right-0 z-50 transition-transform duration-300 transform">
             <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
                 <a href="{{ url('/') }}" class="font-cinzel text-lg font-bold tracking-wider text-[#e9c96b] hover:no-underline flex items-center gap-2">
                     <span>📖</span> <span>La Bibliothèque des Mots</span>
                 </a>
                 
                 <div class="flex flex-wrap items-center gap-3">
-                    <a href="{{ route('contact', ['subject' => 'author_request']) }}" class="font-garamond text-sm italic text-[#e9c96b]/90 hover:text-white underline hidden sm:inline-block">
-                        ✍️ Devenir Auteur
-                    </a>
-
                     @auth
                         <a href="{{ route('my-books') }}" class="font-garamond text-sm font-semibold text-[#e9c96b] hover:underline">
                             📚 Mes Livres
@@ -55,7 +51,7 @@
             </div>
         </nav>
 
-        <main>
+        <main class="pt-14">
             @yield('content')
         </main>
     </div>
@@ -87,10 +83,30 @@
     <div id="t" role="status" class="plate fixed left-1/2 z-[60] max-w-[92vw] px-5 py-2 text-center text-lg" style="bottom:calc(1.5rem + env(safe-area-inset-bottom,0px))"></div>
 
     <script>
+        // Curseur dynamique
         addEventListener('pointermove', e => {
             document.documentElement.style.setProperty('--mx', e.clientX + 'px');
             document.documentElement.style.setProperty('--my', e.clientY + 'px');
         }, { passive: true });
+
+        // Scroll auto-hide navbar (Scroll down = masque, Scroll up = réapparaît)
+        (function() {
+            let lastScrollY = window.scrollY;
+            const navbar = document.getElementById('navbar');
+            if (!navbar) return;
+
+            window.addEventListener('scroll', () => {
+                const currentScrollY = window.scrollY;
+                if (currentScrollY < 60) {
+                    navbar.classList.remove('-translate-y-full');
+                } else if (currentScrollY > lastScrollY && currentScrollY > 90) {
+                    navbar.classList.add('-translate-y-full');
+                } else if (currentScrollY < lastScrollY) {
+                    navbar.classList.remove('-translate-y-full');
+                }
+                lastScrollY = currentScrollY;
+            }, { passive: true });
+        })();
     </script>
     @stack('scripts')
 </body>

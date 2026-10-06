@@ -11,11 +11,21 @@
     <div class="plate mx-auto inline-block px-6 py-4 !cursor-default sm:px-12">
         <h1 class="font-cinzel text-2xl font-bold tracking-widest sm:text-4xl">La Bibliothèque des Mots</h1>
     </div>
-    @if(auth()->check() && auth()->user()->isAuthor())
-        <div class="mt-2">
-            <a href="{{ url('/admin') }}" class="font-garamond text-sm italic text-[#e9c96b]/80 underline hover:text-[#e9c96b]">Accéder au Bureau du Bibliothécaire (Admin)</a>
+    
+    @if(!auth()->check() || auth()->user()->role_level < 2)
+        <div class="mt-3">
+            <a href="{{ route('contact', ['subject' => 'author_request']) }}" class="font-garamond text-base italic text-[#e9c96b] underline hover:text-white transition">
+                ✍️ Devenir Auteur & Proposer vos ouvrages
+            </a>
+        </div>
+    @elseif(auth()->user()->isAuthor())
+        <div class="mt-3">
+            <a href="{{ url('/admin') }}" class="font-garamond text-base italic text-[#e9c96b]/90 underline hover:text-[#e9c96b]">
+                🏛️ Accéder au Bureau du Bibliothécaire (Admin)
+            </a>
         </div>
     @endif
+
     <p class="mt-4 font-garamond text-xl italic text-[#e9c96b]/90 sm:text-2xl">Poussez la porte, parcourez les rayons, feuilletez avant d'emporter.</p>
 </header>
 
