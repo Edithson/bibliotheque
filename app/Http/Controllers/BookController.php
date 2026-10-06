@@ -25,10 +25,10 @@ class BookController extends Controller
      */
     public function shopIndex(): View
     {
-        $books = Book::with('category')->where('is_published', true)->get();
+        $books = Book::with('category:id,name')->where('is_published', true)->get();
 
         // Ne sélectionner que les catégories ayant au moins un livre publié
-        $categories = Category::whereHas('books', function ($query) {
+        $categories = Category::select('id', 'name', 'slug')->whereHas('books', function ($query) {
             $query->where('is_published', true);
         })->get();
 
