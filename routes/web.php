@@ -5,11 +5,16 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Public shop & download routes
+// Public shop, pages & download routes
 Route::get('/', [BookController::class, 'shopIndex'])->name('shop.index');
+Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+Route::post('/contact', [PageController::class, 'sendContact'])->name('contact.send');
+Route::get('/my-books', [PageController::class, 'myBooks'])->name('my-books');
 Route::get('/books/{book:slug}/download', [BookController::class, 'download'])->name('books.download');
 
 // Guest Auth Routes
