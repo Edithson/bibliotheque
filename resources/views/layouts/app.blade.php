@@ -11,7 +11,7 @@
     <div id="lamp" aria-hidden="true"></div>
 
     <div>
-        {{-- Navigation bar intelligente qui s'efface au scroll down et réapparaît au scroll up --}}
+        {{-- Navigation bar intelligente escamotable au scroll --}}
         <nav id="navbar" class="border-b border-[#4a2c17] bg-[#1b1209]/95 backdrop-blur-md px-4 py-2.5 text-sm fixed top-0 left-0 right-0 z-50 transition-transform duration-300 transform">
             <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
                 <a href="{{ url('/') }}" class="font-cinzel text-lg font-bold tracking-wider text-[#e9c96b] hover:no-underline flex items-center gap-2">
@@ -20,39 +20,12 @@
                 
                 <div class="flex flex-wrap items-center gap-3">
                     @auth
-                        {{-- Menu déroulant sous le nom de l'utilisateur --}}
-                        <div class="relative" id="user-menu-wrap">
-                            <button id="user-menu-btn" type="button" aria-expanded="false" class="flex items-center gap-1.5 rounded bg-[#2a1a0e] px-3.5 py-1.5 text-sm font-bold text-[#e9c96b] border border-[#6b4a12] hover:border-[#b98a2e] transition cursor-pointer shadow">
-                                <span>👤 {{ auth()->user()->name }}</span>
-                                <span class="text-xs text-[#e9c96b]/70">▾</span>
-                            </button>
-                            
-                            <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 rounded bg-[#1b1209] border border-[#4a2c17] shadow-2xl py-1 hidden z-50">
-                                <a href="{{ route('my-books') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
-                                    📚 Mes Livres
-                                </a>
-
-                                @if(auth()->user()->isAuthor())
-                                    <a href="{{ route('admin.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
-                                        🏛️ Bureau Admin
-                                    </a>
-                                @endif
-
-                                <div class="border-t border-[#4a2c17] my-1"></div>
-                                <form action="{{ route('logout') }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#2a190e] hover:text-red-300 cursor-pointer">
-                                        🚪 Déconnexion
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                        <x-user-dropdown :is-admin="false" />
                     @else
                         <a href="{{ route('my-books') }}" class="font-garamond text-sm text-[#e9c96b]/80 hover:text-white underline">
                             📚 Mes Livres
                         </a>
 
-                        {{-- Bouton d'authentification unique (Connexion / Inscription) --}}
                         <a href="{{ route('login') }}" class="plate px-4 py-1.5 text-sm font-bold hover:no-underline inline-block shadow-md">
                             🔑 Connexion / Inscription
                         </a>
@@ -66,22 +39,19 @@
         </main>
     </div>
 
-    {{-- Footer très fin, épuré et responsive (Cascade sur mobile) --}}
+    {{-- Footer fin et responsive --}}
     <footer class="mt-12 border-t border-[#4a2c17] bg-[#120a04]/90 px-4 py-4 font-garamond text-xs text-[#e9c96b]/70">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-            {{-- Extrême gauche : À propos --}}
             <div>
                 <a href="{{ route('about') }}" class="italic underline hover:text-[#e9c96b]">
                     📜 À propos du projet
                 </a>
             </div>
 
-            {{-- Centre : Crédit Dev --}}
             <div class="text-[#e9c96b]/50 italic">
                 Développé avec passion pour la littérature &bull; La Bibliothèque des Mots
             </div>
 
-            {{-- Extrême droite : Contact --}}
             <div>
                 <a href="{{ route('contact') }}" class="italic underline hover:text-[#e9c96b]">
                     ✉️ Nous contacter
@@ -93,13 +63,12 @@
     <div id="t" role="status" class="plate fixed left-1/2 z-[60] max-w-[92vw] px-5 py-2 text-center text-lg" style="bottom:calc(1.5rem + env(safe-area-inset-bottom,0px))"></div>
 
     <script>
-        // Curseur dynamique
         addEventListener('pointermove', e => {
             document.documentElement.style.setProperty('--mx', e.clientX + 'px');
             document.documentElement.style.setProperty('--my', e.clientY + 'px');
         }, { passive: true });
 
-        // Scroll auto-hide navbar (Scroll down = masque, Scroll up = réappears)
+        // Scroll auto-hide navbar (Scroll down = masque, Scroll up = réapparaît)
         (function() {
             let lastScrollY = window.scrollY;
             const navbar = document.getElementById('navbar');
@@ -111,9 +80,7 @@
                     navbar.classList.remove('-translate-y-full');
                 } else if (currentScrollY > lastScrollY && currentScrollY > 90) {
                     navbar.classList.add('-translate-y-full');
-                    // Fermer le menu utilisateur s'il était ouvert
-                    const dropdown = document.getElementById('user-menu-dropdown');
-                    if (dropdown) dropdown.classList.add('hidden');
+                    document.querySelectorAll('.user-menu-dropdown').forEach(d => d.classList.add('hidden'));
                 } else if (currentScrollY < lastScrollY) {
                     navbar.classList.remove('-translate-y-full');
                 }
@@ -121,30 +88,27 @@
             }, { passive: true });
         })();
 
-        // User dropdown menu toggle logic
+        // Dropdown toggle générique
         (function() {
-            const btn = document.getElementById('user-menu-btn');
-            const dropdown = document.getElementById('user-menu-dropdown');
-            if (!btn || !dropdown) return;
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = dropdown.classList.contains('hidden');
-                dropdown.classList.toggle('hidden', !isHidden);
-                btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-            });
-
             document.addEventListener('click', (e) => {
-                if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-                    dropdown.classList.add('hidden');
-                    btn.setAttribute('aria-expanded', 'false');
+                const toggleBtn = e.target.closest('.user-menu-toggle');
+                if (toggleBtn) {
+                    e.stopPropagation();
+                    const wrap = toggleBtn.closest('.relative');
+                    const dropdown = wrap ? wrap.querySelector('.user-menu-dropdown') : null;
+                    if (dropdown) {
+                        const isHidden = dropdown.classList.contains('hidden');
+                        document.querySelectorAll('.user-menu-dropdown').forEach(d => d.classList.add('hidden'));
+                        dropdown.classList.toggle('hidden', !isHidden);
+                    }
+                } else if (!e.target.closest('.user-menu-dropdown')) {
+                    document.querySelectorAll('.user-menu-dropdown').forEach(d => d.classList.add('hidden'));
                 }
             });
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    dropdown.classList.add('hidden');
-                    btn.setAttribute('aria-expanded', 'false');
+                    document.querySelectorAll('.user-menu-dropdown').forEach(d => d.classList.add('hidden'));
                 }
             });
         })();
