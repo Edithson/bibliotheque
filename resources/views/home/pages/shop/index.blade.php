@@ -3,10 +3,6 @@
 @section('title', 'La Bibliothèque des Mots — Accueil')
 
 @section('content')
-<button id="cart" class="plate fixed right-3 z-40 px-3 py-1.5 text-lg" style="top:calc(.75rem + env(safe-area-inset-top,0px))">
-    Comptoir : <b id="n">0</b>
-</button>
-
 <header class="px-4 pb-2 pt-16 text-center sm:pt-10">
     <div class="plate mx-auto inline-block px-6 py-4 !cursor-default sm:px-12">
         <h1 class="font-cinzel text-2xl font-bold tracking-widest sm:text-4xl">La Bibliothèque des Mots</h1>
@@ -55,8 +51,6 @@
                 <div class="mt-auto pt-6">
                     <p class="font-cinzel text-3xl text-[#2a190e]"><span id="bp"></span> <small id="cur-unit" class="text-sm">FCFA</small></p>
                     <div class="mt-3 flex flex-wrap items-center gap-4">
-                        <button id="add" class="plate px-5 py-2 text-xl">Poser sur le comptoir</button>
-                        
                         <a id="dl-btn" href="#" class="plate hidden px-5 py-2 text-xl border-green-800 text-green-950 font-bold" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">Télécharger (PDF)</a>
                         <a id="login-dl-btn" href="{{ route('login') }}" class="plate hidden px-5 py-2 text-xl border-amber-800 text-amber-950 font-bold" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">Se connecter pour télécharger</a>
 
@@ -94,11 +88,17 @@ const nz = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 const pal = ["#5b1a1f","#1f3d2e","#1d2b4a","#3e2a1c","#1c4a4a","#4a2340","#4b4a1e","#1a1a1a","#7a3418"];
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let cur = null, pg = 0, cat = 'Tout', last = null, cart = [], tm;
+let cur = null, pg = 0, cat = 'Tout', last = null, tm;
 
 const sp = i => {
     const b = B[i];
-    return `<button class="spine" data-i="${i}" style="--c:${b.c};--w:${b.w}px;--h:${b.h}px" aria-label="${b.t}, ${b.a}"><span>${b.t}</span></button>`;
+    const len = b.t ? b.t.length : 0;
+    
+    const w = b.w || Math.min(62, Math.max(44, 44 + Math.floor(len * 0.4)));
+    const h = b.h || Math.min(230, Math.max(190, 190 + Math.floor(len * 0.8)));
+    const fontCls = len > 32 ? 'text-[10px]' : (len > 22 ? 'text-[11px]' : (len > 14 ? 'text-[12px]' : 'text-[13px]'));
+    
+    return `<button class="spine" data-i="${i}" style="--c:${b.c};--w:${w}px;--h:${h}px" aria-label="${b.t}, ${b.a}"><span class="${fontCls}" title="${b.t}">${b.t}</span></button>`;
 };
 const fill = k => {
     const r = (k * 7919) % 97;
@@ -123,7 +123,8 @@ for (let s = 0; s < shelfCount; s++) {
             shelfItemsHtml += fill(s * 20 + j);
         }
     }
-    rowsHtml += `<div class="relative">${s === 0 ? `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:14%">${ladderSvg}</button>` : ''}<div class="shelf">${shelfItemsHtml}</div><div class="plank"></div></div>`;
+    // L'échelle est positionnée sur le 1er livre fictif qui suit immédiatement le 1er livre réel (à 11.5%)
+    rowsHtml += `<div class="relative">${s === 0 ? `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:11.5%">${ladderSvg}</button>` : ''}<div class="shelf">${shelfItemsHtml}</div><div class="plank"></div></div>`;
 }
 
 $('#rows').innerHTML = rowsHtml;
@@ -288,27 +289,6 @@ addEventListener('keydown', e => {
     if (e.key == 'ArrowRight') go(1);
     if (e.key == 'ArrowLeft') go(-1);
 });
-
-const toast = s => {
-    const t = $('#t');
-    t.textContent = s;
-    t.classList.add('on');
-    clearTimeout(tm);
-    tm = setTimeout(() => t.classList.remove('on'), 2400);
-};
-
-$('#add').onclick = () => {
-    cart.push(B[cur]);
-    $('#n').textContent = cart.length;
-    const c = $('#cart');
-    c.classList.remove('stamp');
-    void c.offsetWidth;
-    c.classList.add('stamp');
-    const label = B[cur].p === 0 ? 'gratuit' : `${B[cur].p.toLocaleString('fr-FR')} FCFA`;
-    toast(`« ${B[cur].t} » (${label}) est sur le comptoir`);
-};
-
-$('#cart').onclick = () => toast(cart.length ? `${cart.length} livre${cart.length > 1 ? 's' : ''} : ${cart.reduce((s, b) => s + b.p, 0).toLocaleString('fr-FR')} FCFA` : 'Le comptoir est vide pour l\u2019instant.');
 
 filt();
 </script>

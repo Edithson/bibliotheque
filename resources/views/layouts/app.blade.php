@@ -20,22 +20,32 @@
                 
                 <div class="flex flex-wrap items-center gap-3">
                     @auth
-                        <a href="{{ route('my-books') }}" class="font-garamond text-sm font-semibold text-[#e9c96b] hover:underline">
-                            📚 Mes Livres
-                        </a>
+                        {{-- Menu déroulant sous le nom de l'utilisateur --}}
+                        <div class="relative" id="user-menu-wrap">
+                            <button id="user-menu-btn" type="button" aria-expanded="false" class="flex items-center gap-1.5 rounded bg-[#2a1a0e] px-3.5 py-1.5 text-sm font-bold text-[#e9c96b] border border-[#6b4a12] hover:border-[#b98a2e] transition cursor-pointer shadow">
+                                <span>👤 {{ auth()->user()->name }}</span>
+                                <span class="text-xs text-[#e9c96b]/70">▾</span>
+                            </button>
+                            
+                            <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 rounded bg-[#1b1209] border border-[#4a2c17] shadow-2xl py-1 hidden z-50">
+                                <a href="{{ route('my-books') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                                    📚 Mes Livres
+                                </a>
 
-                        @if(auth()->user()->isAuthor())
-                            <a href="{{ route('admin.index') }}" class="plate px-3 py-1 text-xs hover:no-underline inline-block">
-                                🏛️ Bureau Admin
-                            </a>
-                        @endif
+                                @if(auth()->user()->isAuthor())
+                                    <a href="{{ route('admin.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                                        🏛️ Bureau Admin
+                                    </a>
+                                @endif
 
-                        <div class="flex items-center gap-2 border-l border-[#4a2c17] pl-3">
-                            <span class="font-bold text-[#f3e7cc] text-xs sm:text-sm">{{ auth()->user()->name }}</span>
-                            <form action="{{ route('logout') }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="text-xs text-[#e9c96b]/80 underline hover:text-[#e9c96b]">Déconnexion</button>
-                            </form>
+                                <div class="border-t border-[#4a2c17] my-1"></div>
+                                <form action="{{ route('logout') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#2a190e] hover:text-red-300 cursor-pointer">
+                                        🚪 Déconnexion
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     @else
                         <a href="{{ route('my-books') }}" class="font-garamond text-sm text-[#e9c96b]/80 hover:text-white underline">
@@ -89,7 +99,7 @@
             document.documentElement.style.setProperty('--my', e.clientY + 'px');
         }, { passive: true });
 
-        // Scroll auto-hide navbar (Scroll down = masque, Scroll up = réapparaît)
+        // Scroll auto-hide navbar (Scroll down = masque, Scroll up = réappears)
         (function() {
             let lastScrollY = window.scrollY;
             const navbar = document.getElementById('navbar');
@@ -101,11 +111,42 @@
                     navbar.classList.remove('-translate-y-full');
                 } else if (currentScrollY > lastScrollY && currentScrollY > 90) {
                     navbar.classList.add('-translate-y-full');
+                    // Fermer le menu utilisateur s'il était ouvert
+                    const dropdown = document.getElementById('user-menu-dropdown');
+                    if (dropdown) dropdown.classList.add('hidden');
                 } else if (currentScrollY < lastScrollY) {
                     navbar.classList.remove('-translate-y-full');
                 }
                 lastScrollY = currentScrollY;
             }, { passive: true });
+        })();
+
+        // User dropdown menu toggle logic
+        (function() {
+            const btn = document.getElementById('user-menu-btn');
+            const dropdown = document.getElementById('user-menu-dropdown');
+            if (!btn || !dropdown) return;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = dropdown.classList.contains('hidden');
+                dropdown.classList.toggle('hidden', !isHidden);
+                btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    dropdown.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
         })();
     </script>
     @stack('scripts')
