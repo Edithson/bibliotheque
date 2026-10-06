@@ -17,7 +17,6 @@ class Book extends Model
         'author',
         'category_id',
         'price',
-        'stock',
         'cover_color',
         'cover_width',
         'cover_height',
@@ -28,6 +27,11 @@ class Book extends Model
         'publish_year',
         'is_published',
     ];
+
+    public function getIsFreeAttribute(): bool
+    {
+        return $this->price === 0;
+    }
 
     public function category(): BelongsTo
     {

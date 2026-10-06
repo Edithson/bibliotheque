@@ -27,11 +27,10 @@ class UpdateBookRequest extends FormRequest
             'author' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'exists:categories,id'],
             'price' => ['required', 'integer', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
+            'book_file' => ['nullable', 'file', 'mimes:pdf,epub,mobi,txt,docx', 'max:30720'],
             'description' => ['nullable', 'string'],
             'excerpt' => ['nullable', 'string'],
             'cover_color' => ['nullable', 'string', 'max:50'],
-            'nbr_pages' => ['nullable', 'integer', 'min:1'],
             'publish_year' => ['nullable', 'integer'],
             'is_published' => ['nullable', 'boolean'],
         ];

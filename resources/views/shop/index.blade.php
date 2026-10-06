@@ -41,9 +41,10 @@
                 <p class="my-4 text-center text-2xl text-[#b98a2e]" aria-hidden="true">❦</p>
                 <p id="bd" class="font-garamond text-xl leading-snug"></p>
                 <div class="mt-auto pt-6">
-                    <p class="font-cinzel text-3xl text-[#2a190e]"><span id="bp"></span> <small class="text-sm">FCFA</small></p>
+                    <p class="font-cinzel text-3xl text-[#2a190e]"><span id="bp"></span> <small id="cur-unit" class="text-sm">FCFA</small></p>
                     <div class="mt-3 flex flex-wrap items-center gap-4">
                         <button id="add" class="plate px-5 py-2 text-xl">Poser sur le comptoir</button>
+                        <a id="dl-btn" href="#" class="plate hidden px-5 py-2 text-xl border-green-800 text-green-950 font-bold" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">Télécharger (PDF)</a>
                         <button id="x" class="font-garamond text-lg italic underline">Reposer le livre</button>
                     </div>
                 </div>
@@ -147,8 +148,9 @@ $('#rows').innerHTML = rowsHtml;
     };
 })();
 
-const availableCats = ['Tout', ...new Set([...(DB_CATS.length ? DB_CATS : []), ...B.map(b => b.g)])];
-$('#cats').innerHTML = availableCats.map(c => `<button class="plate px-4 py-1 text-lg" aria-pressed="${c == 'Tout'}">${c}</button>`).join('');
+// Seules les catégories possédant des livres sont affichées
+const activeCats = ['Tout', ...DB_CATS];
+$('#cats').innerHTML = activeCats.map(c => `<button class="plate px-4 py-1 text-lg" aria-pressed="${c == 'Tout'}">${c}</button>`).join('');
 
 const filt = () => {
     const q = nz($('#q').value.trim());
@@ -175,7 +177,7 @@ $('#rows').onclick = e => {
 };
 
 function show() {
-    const P = B[cur].x.split('|');
+    const P = B[cur].x ? B[cur].x.split('|') : [B[cur].d];
     $('#tx').textContent = P[pg];
     $('#pn').textContent = `${pg + 1} / ${P.length}`;
     $('#pv').disabled = !pg;
@@ -194,7 +196,21 @@ function openBook(i, el) {
     $('#bt').textContent = b.t;
     $('#ba').textContent = 'de ' + b.a;
     $('#bd').textContent = b.d;
-    $('#bp').textContent = b.p.toLocaleString('fr-FR');
+
+    const dlBtn = $('#dl-btn');
+    if (b.p === 0) {
+        $('#bp').textContent = 'GRATUIT';
+        $('#cur-unit').style.display = 'none';
+        dlBtn.href = b.download_url;
+        dlBtn.classList.remove('hidden');
+        dlBtn.classList.add('inline-block');
+    } else {
+        $('#bp').textContent = b.p.toLocaleString('fr-FR');
+        $('#cur-unit').style.display = 'inline';
+        dlBtn.classList.add('hidden');
+        dlBtn.classList.remove('inline-block');
+    }
+
     $('#m').classList.replace('hidden', 'flex');
     document.body.style.overflow = 'hidden';
     if (!rm) {
@@ -224,8 +240,8 @@ const cls = () => {
 };
 
 function go(d) {
-    const L = B[cur].x.split('|').length;
-    if (pg + d < 0 || pg + d >= L) return;
+    const P = B[cur].x ? B[cur].x.split('|') : [B[cur].d];
+    if (pg + d < 0 || pg + d >= P.length) return;
     const r = $('#rp');
     r.classList.remove('flip');
     void r.offsetWidth;
@@ -262,7 +278,8 @@ $('#add').onclick = () => {
     c.classList.remove('stamp');
     void c.offsetWidth;
     c.classList.add('stamp');
-    toast(`« ${B[cur].t} » est sur le comptoir`);
+    const label = B[cur].p === 0 ? 'gratuit' : `${B[cur].p.toLocaleString('fr-FR')} FCFA`;
+    toast(`« ${B[cur].t} » (${label}) est sur le comptoir`);
 };
 
 $('#cart').onclick = () => toast(cart.length ? `${cart.length} livre${cart.length > 1 ? 's' : ''} : ${cart.reduce((s, b) => s + b.p, 0).toLocaleString('fr-FR')} FCFA` : 'Le comptoir est vide pour l\u2019instant.');

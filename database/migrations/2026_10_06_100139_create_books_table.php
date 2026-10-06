@@ -18,12 +18,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->text('excerpt')->nullable();
             $table->string('author')->nullable();
-            $table->integer('price')->default(0); // En FCFA
-            $table->integer('stock')->default(0);
+            $table->integer('price')->default(0); // En FCFA (0 = Gratuit)
             $table->string('cover_color')->nullable(); // couleur de couverture en hexadécimal
             $table->integer('cover_width')->default(50);
             $table->integer('cover_height')->default(200);
-            $table->string('file_path')->nullable(); // Chemin privé du PDF
+            $table->string('file_path')->nullable(); // Chemin privé du fichier PDF
             $table->integer('nbr_pages')->default(1);
             $table->integer('publish_year')->nullable()->default(2026);
             $table->boolean('is_published')->default(true);

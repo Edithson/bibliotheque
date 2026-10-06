@@ -203,25 +203,31 @@ html {
 }
 
 .ledger {
-    background: repeating-linear-gradient(#f7edd4 0 41px, #c7a96f66 41px 42px);
+    background: #f7edd4;
 }
 
 .ledger th {
     font-family: Cinzel, Georgia, serif;
-    font-size: .68rem;
+    font-size: .75rem;
+    font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
     color: #8b1e1e;
     border-bottom: 2px solid #8b1e1e55;
-    padding: 10px 14px;
+    padding: 12px 14px;
     text-align: left;
-    background: #f7edd4;
+    background: #f1e4c3;
 }
 
 .ledger td {
-    padding: 9px 14px;
-    color: #3b2a1a;
-    border-bottom: 1px solid #0000000f;
+    padding: 12px 14px;
+    color: #2a190e;
+    border-bottom: 1px solid #c7a96f44;
+    vertical-align: middle;
+}
+
+.ledger tr:hover td {
+    background: #f2e5c6;
 }
 
 .ledger tr:last-child td {
