@@ -71,19 +71,21 @@
 @push('scripts')
 <script>
 const $ = s => document.querySelector(s), fmt = n => n.toLocaleString('fr-FR');
-const CATS = ['Roman', 'Histoire', 'Sciences', 'Jeunesse', 'Voyage', 'Essai'];
-let BOOKS = [
-    {id:1, t:"Le Cartographe des Brumes", a:"Élise Marchand", g:"Roman", p:6500, s:12, d:"Un géomètre dessine la carte d'une île qui change de place chaque matin."},
-    {id:2, t:"Nuits d'Harmattan", a:"Awa Diallo", g:"Roman", p:5000, s:7, d:"Quand le vent sec se lève, une ville entière rouvre ses souvenirs."},
-    {id:3, t:"Mémoire des Grands Fleuves", a:"Paul-Henri Mbarga", g:"Histoire", p:8000, s:4, d:"De la source à l'estuaire, l'histoire de ceux qui vivent sur les rives."},
-    {id:4, t:"L'Horloger de Minuit", a:"Camille Rousseau", g:"Roman", p:4500, s:0, d:"L'horloge de la gare s'arrête chaque nuit à minuit. Pourquoi ?"},
-    {id:5, t:"Petit Atlas des Étoiles", a:"Léa Fontaine", g:"Sciences", p:7500, s:15, d:"Un guide de poche pour reconnaître les constellations à l'œil nu."},
-    {id:6, t:"Le Jardin des Contes Perdus", a:"Fatou Ndiaye", g:"Jeunesse", p:3500, s:22, d:"Dans the jardin de grand-mère, chaque conte oublié devient une fleur."},
-    {id:7, t:"Carnets de Route", a:"Marc Olivier", g:"Voyage", p:6000, s:3, d:"Trois semaines sur les routes, un carnet, et aucun plan précis."},
-    {id:8, t:"Éloge de la Lenteur", a:"Étienne Vasseur", g:"Essai", p:5500, s:9, d:"Un essai pour reprendre le temps de lire, de marcher et de penser."}
-];
 
-let nextId = 9, editId = null, tm;
+const CATS = @json($categories->pluck('name'));
+let BOOKS = @json($books->map(function($b) {
+    return [
+        'id' => $b->id,
+        't' => $b->title,
+        'a' => $b->author ?? 'Inconnu',
+        'g' => $b->category ? $b->category->name : 'Général',
+        'p' => $b->price,
+        's' => $b->stock,
+        'd' => $b->description ?? ''
+    ];
+}));
+
+let nextId = Math.max(0, ...BOOKS.map(b => b.id)) + 1, editId = null, tm;
 
 function stats() {
     const val = BOOKS.reduce((s, b) => s + b.p * b.s, 0), ex = BOOKS.reduce((s, b) => s + b.s, 0), rupture = BOOKS.filter(b => b.s == 0).length;
@@ -103,6 +105,7 @@ function openNew() { editId = null; $('#mt').textContent = 'Nouvel ouvrage'; $('
 
 function edit(id) {
     const b = BOOKS.find(x => x.id == id);
+    if (!b) return;
     editId = id;
     $('#mt').textContent = "Modifier l'ouvrage";
     $('#f_t').value = b.t;
@@ -116,7 +119,7 @@ function edit(id) {
 
 function del(id) {
     const b = BOOKS.find(x => x.id == id);
-    if (!confirm(`Retirer « ${b.t} » du catalogue ?`)) return;
+    if (!b || !confirm(`Retirer « ${b.t} » du catalogue ?`)) return;
     BOOKS = BOOKS.filter(x => x.id != id);
     refresh();
     toast('Ouvrage retiré du catalogue');

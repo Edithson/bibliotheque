@@ -69,22 +69,28 @@
 
 @push('scripts')
 <script>
-/* Catalogue initial de démonstration */
-const B = [
-    {t:"Le Cartographe des Brumes",a:"Élise Marchand",g:"Roman",c:"#5b1a1f",w:56,h:216,p:6500,d:"Un géomètre dessine la carte d'une île qui change de place chaque matin.",x:"Le géomètre posa son compas sur la table et sut, avant même de tracer le premier trait, que l'île ne figurerait sur aucune carte.|Chaque matin, la brume déplaçait la côte d'une lieue, et chaque soir il corrigeait ses relevés en riant tout seul."},
-    {t:"Nuits d'Harmattan",a:"Awa Diallo",g:"Roman",c:"#3e2a1c",w:48,h:196,p:5000,d:"Quand le vent sec se lève, une ville entière rouvre ses souvenirs.",x:"Quand l'harmattan se leva, la ville ferma ses volets et rouvrit ses souvenirs. Chez Mama Awa, on racontait les vieilles histoires.|La poussière rougeoyait sur les toits. Les conteurs ne craignaient pas le vent : il ne faisait qu'apporter le début de la légende."},
-    {t:"Mémoire des Grands Fleuves",a:"Paul-Henri Mbarga",g:"Histoire",c:"#1c4a4a",w:62,h:208,p:8000,d:"De la source à l'estuaire, l'histoire de ceux qui vivent sur les rives.",x:"Avant les routes, il y avait les fleuves. Ils portaient les pirogues, les nouvelles, les mariages et parfois les guerres.|Ce livre suit leur cours de la source à l'estuaire et écoute ceux qui vivent sur leurs rives depuis toujours."},
-    {t:"L'Horloger de Minuit",a:"Camille Rousseau",g:"Roman",c:"#4a2340",w:44,h:188,p:4500,d:"L'horloge de la gare s'arrête chaque nuit à minuit. Pourquoi ?",x:"L'horloge de la gare s'arrêtait chaque nuit à minuit précis, et personne ne s'en étonnait plus, sauf le nouveau chef de gare.|Il monta au clocher avec une lampe, un tournevis et la ferme intention de comprendre. Il y trouva un vieil homme qui remontait le temps."},
-    {t:"Petit Atlas des Étoiles",a:"Léa Fontaine",g:"Sciences",c:"#1d2b4a",w:52,h:200,p:7500,d:"Un guide de poche pour reconnaître les constellations à l'œil nu.",x:"Levez les yeux : ces points de lumière sont des soleils lointains. Le plus proche, après le nôtre, est à plus de quatre années-lumière.|Pour les repérer, il suffit d'un ciel dégagé, d'un peu de patience et de ce petit atlas glissé dans la poche."},
-    {t:"Le Jardin des Contes Perdus",a:"Fatou Ndiaye",g:"Jeunesse",c:"#7a3418",w:60,h:212,p:3500,d:"Dans le jardin de grand-mère, chaque conte oublié devient une fleur.",x:"Dans le jardin de grand-mère, chaque conte oublié devenait une fleur. Il suffisait de tendre l'oreille pour l'entendre éclore.|Un soir, Kofi trouva un bouton qui chantait. Il décida de l'arroser avec de l'eau de pluie et beaucoup de curiosité."},
-    {t:"Carnets de Route",a:"Marc Olivier",g:"Voyage",c:"#4b4a1e",w:46,h:192,p:6000,d:"Trois semaines sur les routes, un carnet, et aucun plan précis.",x:"Nous avons quitté la ville à l'aube, sans autre plan que celui de suivre la route tant qu'elle nous paraîtrait belle.|Au troisième jour, le carnet était plein de noms de villages, de recettes griffonnées et d'adresses de gens qui nous avaient nourris."},
-    {t:"Éloge de la Lenteur",a:"Étienne Vasseur",g:"Essai",c:"#1a1a1a",w:50,h:204,p:5500,d:"Un essai pour reprendre le temps de lire, de marcher et de penser.",x:"Nous avons tout accéléré, jusqu'à nos pensées. Pourtant, la lecture reste ce petit territoire où l'on peut encore marcher lentement.|Prendre son temps n'est pas perdre son temps : c'est en retrouver la texture, page après page, comme on caresse le grain du papier."}
-];
+/* Données dynamiques depuis la base de données SQLite */
+const B = @json($books->map(function($b) {
+    return [
+        'id' => $b->id,
+        't' => $b->title,
+        'a' => $b->author ?? 'Auteur inconnu',
+        'g' => $b->category ? $b->category->name : 'Général',
+        'c' => $b->cover_color ?? '#5b1a1f',
+        'w' => $b->cover_width ?? 50,
+        'h' => $b->cover_height ?? 200,
+        'p' => $b->price,
+        's' => $b->stock,
+        'd' => $b->description ?? '',
+        'x' => $b->excerpt ?? ($b->description ?? '')
+    ];
+}));
+
+const DB_CATS = @json($categories->pluck('name'));
 
 const $ = s => document.querySelector(s);
 const nz = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const pal = ["#5b1a1f","#1f3d2e","#1d2b4a","#3e2a1c","#1c4a4a","#4a2340","#4b4a1e","#1a1a1a","#7a3418"];
-const S = [1, 4, 8, 14];
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let cur = null, pg = 0, cat = 'Tout', last = null, cart = [], tm;
@@ -99,7 +105,29 @@ const fill = k => {
 };
 const ladderSvg = `<svg viewBox="0 0 60 260" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="lw" x1="0" x2="1"><stop offset="0" stop-color="#6b4423"/><stop offset=".5" stop-color="#9a6a35"/><stop offset="1" stop-color="#5a3a1c"/></linearGradient></defs><circle cx="30" cy="9" r="8" fill="#241608"/><rect x="4" y="12" width="9" height="246" rx="3" fill="url(#lw)"/><rect x="47" y="12" width="9" height="246" rx="3" fill="url(#lw)"/><g stroke="#7a4a22" stroke-width="7" stroke-linecap="round"><line x1="9" y1="40" x2="51" y2="40"/><line x1="9" y1="78" x2="51" y2="78"/><line x1="9" y1="116" x2="51" y2="116"/><line x1="9" y1="154" x2="51" y2="154"/><line x1="9" y1="192" x2="51" y2="192"/><line x1="9" y1="230" x2="51" y2="230"/></g></svg>`;
 
-$('#rows').innerHTML = [0, 4].map(s => `<div class="relative">${s ? '' : `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:14%">${ladderSvg}</button>`}<div class="shelf">${Array.from({length: 20}, (_, j) => S.includes(j) ? sp(s + S.indexOf(j)) : fill(s * 20 + j)).join('')}</div><div class="plank"></div></div>`).join('');
+// Division dynamique en étagères
+const chunkSize = 4;
+const shelfCount = Math.max(1, Math.ceil(B.length / chunkSize));
+let rowsHtml = '';
+for (let s = 0; s < shelfCount; s++) {
+    const startIdx = s * chunkSize;
+    const endIdx = Math.min(startIdx + chunkSize, B.length);
+    let shelfItemsHtml = '';
+    let itemSlot = 0;
+    
+    for (let j = 0; j < 20; j++) {
+        // placer les livres réels séparés par quelques faux livres décoratifs
+        if ([1, 5, 9, 13].includes(j) && (startIdx + itemSlot) < endIdx) {
+            shelfItemsHtml += sp(startIdx + itemSlot);
+            itemSlot++;
+        } else {
+            shelfItemsHtml += fill(s * 20 + j);
+        }
+    }
+    rowsHtml += `<div class="relative">${s === 0 ? `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:14%">${ladderSvg}</button>` : ''}<div class="shelf">${shelfItemsHtml}</div><div class="plank"></div></div>`;
+}
+
+$('#rows').innerHTML = rowsHtml;
 
 (function() {
     const lw = $('#ladder');
@@ -135,7 +163,8 @@ $('#rows').innerHTML = [0, 4].map(s => `<div class="relative">${s ? '' : `<div c
     };
 })();
 
-$('#cats').innerHTML = ['Tout', ...new Set(B.map(b => b.g))].map(c => `<button class="plate px-4 py-1 text-lg" aria-pressed="${c == 'Tout'}">${c}</button>`).join('');
+const availableCats = ['Tout', ...new Set([...(DB_CATS.length ? DB_CATS : []), ...B.map(b => b.g)])];
+$('#cats').innerHTML = availableCats.map(c => `<button class="plate px-4 py-1 text-lg" aria-pressed="${c == 'Tout'}">${c}</button>`).join('');
 
 const filt = () => {
     const q = nz($('#q').value.trim());
