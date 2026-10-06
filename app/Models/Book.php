@@ -28,6 +28,15 @@ class Book extends Model
         'is_published',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'is_published' => 'boolean',
+            'price' => 'integer',
+            'nbr_pages' => 'integer',
+        ];
+    }
+
     public function getIsFreeAttribute(): bool
     {
         return $this->price === 0;

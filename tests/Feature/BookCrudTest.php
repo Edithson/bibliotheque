@@ -2,6 +2,7 @@
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +29,7 @@ test('can list books on shop index page and only shows categories with published
 });
 
 test('admin index paginates books list', function () {
+    $user = User::factory()->create(['role' => 'gerant']);
     $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
 
     for ($i = 1; $i <= 15; $i++) {
@@ -41,20 +43,22 @@ test('admin index paginates books list', function () {
         ]);
     }
 
-    $response = $this->get('/admin');
+    $response = $this->actingAs($user)->get('/admin');
     $response->assertStatus(200);
     $response->assertSee('Book 15');
 });
 
 test('admin create page loads successfully', function () {
+    $user = User::factory()->create(['role' => 'gerant']);
     Category::create(['name' => 'Roman', 'slug' => 'roman']);
 
-    $response = $this->get('/admin/books/create');
+    $response = $this->actingAs($user)->get('/admin/books/create');
     $response->assertStatus(200);
     $response->assertSee('Ajouter un nouvel ouvrage numérique');
 });
 
 test('admin edit page loads successfully', function () {
+    $user = User::factory()->create(['role' => 'gerant']);
     $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
     $book = Book::create([
         'title' => 'Livre à modifier',
@@ -64,12 +68,13 @@ test('admin edit page loads successfully', function () {
         'price' => 5000,
     ]);
 
-    $response = $this->get("/admin/books/{$book->id}/edit");
+    $response = $this->actingAs($user)->get("/admin/books/{$book->id}/edit");
     $response->assertStatus(200);
     $response->assertSee('Livre à modifier');
 });
 
 test('can create a digital book with uploaded pdf file and detects page count', function () {
+    $user = User::factory()->create(['role' => 'gerant']);
     Storage::fake('local');
     $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
     $file = UploadedFile::fake()->create('mon-livre.pdf', 500, 'application/pdf');
@@ -84,7 +89,7 @@ test('can create a digital book with uploaded pdf file and detects page count', 
         'description' => 'Un roman gothique moderne à Barcelone.',
     ];
 
-    $response = $this->post('/admin/books', $payload);
+    $response = $this->actingAs($user)->post('/admin/books', $payload);
 
     $response->assertRedirect('/admin');
 
@@ -95,6 +100,7 @@ test('can create a digital book with uploaded pdf file and detects page count', 
 });
 
 test('rejects non-text file types such as zip or mp4', function () {
+    $user = User::factory()->create(['role' => 'gerant']);
     $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
     $invalidFile = UploadedFile::fake()->create('virus.exe', 500, 'application/x-msdownload');
 
@@ -106,7 +112,7 @@ test('rejects non-text file types such as zip or mp4', function () {
         'book_file' => $invalidFile,
     ];
 
-    $response = $this->post('/admin/books', $payload);
+    $response = $this->actingAs($user)->post('/admin/books', $payload);
     $response->assertSessionHasErrors(['book_file']);
 });
 

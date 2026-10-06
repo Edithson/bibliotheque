@@ -8,7 +8,7 @@
         <p class="font-garamond text-sm italic text-[#e9c96b]/70">Bureau du Bibliothécaire</p>
         <h1 class="font-cinzel text-2xl font-bold sm:text-3xl text-[#e9c96b]">Modifier l'ouvrage : {{ $book->title }}</h1>
     </div>
-    <a href="{{ route('admin.index') }}" class="font-garamond text-base italic text-[#e9c96b]/80 underline hover:text-[#e9c96b]">← Revenir au catalogue</a>
+    <a href="{{ route('admin.books.index') }}" class="font-garamond text-base italic text-[#e9c96b]/80 underline hover:text-[#e9c96b]">← Revenir au catalogue</a>
 </div>
 
 @if ($errors->any())
@@ -63,12 +63,14 @@
             <input type="number" name="publish_year" value="{{ old('publish_year', $book->publish_year) }}" class="admin-field-input">
         </label>
 
-        <div class="flex items-center pt-6">
-            <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" name="is_published" value="1" {{ old('is_published', $book->is_published) ? 'checked' : '' }} class="h-5 w-5 rounded accent-[#b98a2e]">
-                <span class="text-base text-[#e9c96b]">Publier cet ouvrage sur le site web</span>
-            </label>
-        </div>
+        @if (auth()->user()->isGerant())
+            <div class="flex items-center pt-6">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_published" value="1" {{ old('is_published', $book->is_published) ? 'checked' : '' }} class="h-5 w-5 rounded accent-[#b98a2e]">
+                    <span class="text-base text-[#e9c96b]">Publier cet ouvrage sur le site web</span>
+                </label>
+            </div>
+        @endif
 
         <div class="sm:col-span-2 rounded border border-[#c7a96f]/40 bg-[#fffaf0]/5 p-4 space-y-2">
             <span class="block text-base font-bold text-[#e9c96b]">Remplacer le fichier du Livre Numérique (PDF, EPUB, MOBI, TXT, DOCX - max 30 Mo)</span>
@@ -95,7 +97,7 @@
     </div>
 
     <div class="flex justify-end gap-4 pt-4 border-t border-[#4a2c17]">
-        <a href="{{ route('admin.index') }}" class="px-6 py-2.5 font-garamond text-lg italic underline text-[#e9c96b]/80 hover:text-[#e9c96b]">Annuler</a>
+        <a href="{{ route('admin.books.index') }}" class="px-6 py-2.5 font-garamond text-lg italic underline text-[#e9c96b]/80 hover:text-[#e9c96b]">Annuler</a>
         <button type="submit" class="plate px-8 py-2.5 text-xl">Enregistrer les modifications</button>
     </div>
 </form>
