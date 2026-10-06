@@ -3,17 +3,25 @@
 @section('title', 'La Bibliothèque des Mots — Accueil')
 
 @section('content')
-<button id="cart" class="plate fixed right-3 z-40 px-3 py-1.5 text-lg" style="top:calc(.75rem + env(safe-area-inset-top,0px))">
-    Comptoir : <b id="n">0</b>
-</button>
-
 <header class="px-4 pb-2 pt-16 text-center sm:pt-10">
     <div class="plate mx-auto inline-block px-6 py-4 !cursor-default sm:px-12">
         <h1 class="font-cinzel text-2xl font-bold tracking-widest sm:text-4xl">La Bibliothèque des Mots</h1>
     </div>
-    <div class="mt-2">
-        <a href="{{ url('/admin') }}" class="font-garamond text-sm italic text-[#e9c96b]/80 underline hover:text-[#e9c96b]">Accéder au Bureau du Bibliothécaire (Admin)</a>
-    </div>
+    
+    @if(!auth()->check() || auth()->user()->role_level < 2)
+        <div class="mt-3">
+            <a href="{{ route('contact', ['subject' => 'author_request']) }}" class="font-garamond text-base italic text-[#e9c96b] underline hover:text-white transition">
+                ✍️ Devenir Auteur & Proposer vos ouvrages
+            </a>
+        </div>
+    @elseif(auth()->user()->isAuthor())
+        <div class="mt-3">
+            <a href="{{ url('/admin') }}" class="font-garamond text-base italic text-[#e9c96b]/90 underline hover:text-[#e9c96b]">
+                🏛️ Accéder au Bureau du Bibliothécaire (Admin)
+            </a>
+        </div>
+    @endif
+
     <p class="mt-4 font-garamond text-xl italic text-[#e9c96b]/90 sm:text-2xl">Poussez la porte, parcourez les rayons, feuilletez avant d'emporter.</p>
 </header>
 
@@ -43,8 +51,9 @@
                 <div class="mt-auto pt-6">
                     <p class="font-cinzel text-3xl text-[#2a190e]"><span id="bp"></span> <small id="cur-unit" class="text-sm">FCFA</small></p>
                     <div class="mt-3 flex flex-wrap items-center gap-4">
-                        <button id="add" class="plate px-5 py-2 text-xl">Poser sur le comptoir</button>
                         <a id="dl-btn" href="#" class="plate hidden px-5 py-2 text-xl border-green-800 text-green-950 font-bold" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">Télécharger (PDF)</a>
+                        <a id="login-dl-btn" href="{{ route('login') }}" class="plate hidden px-5 py-2 text-xl border-amber-800 text-amber-950 font-bold" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">Se connecter pour télécharger</a>
+
                         <button id="x" class="font-garamond text-lg italic underline">Reposer le livre</button>
                     </div>
                 </div>
@@ -70,20 +79,26 @@
 
 @push('scripts')
 <script>
-/* Données dynamiques depuis la base de données SQLite */
 const B = @json($books);
 const DB_CATS = @json($categories->pluck('name'));
+const IS_LOGGED_IN = @json(auth()->check());
 
 const $ = s => document.querySelector(s);
 const nz = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const pal = ["#5b1a1f","#1f3d2e","#1d2b4a","#3e2a1c","#1c4a4a","#4a2340","#4b4a1e","#1a1a1a","#7a3418"];
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let cur = null, pg = 0, cat = 'Tout', last = null, cart = [], tm;
+let cur = null, pg = 0, cat = 'Tout', last = null, tm;
 
 const sp = i => {
     const b = B[i];
-    return `<button class="spine" data-i="${i}" style="--c:${b.c};--w:${b.w}px;--h:${b.h}px" aria-label="${b.t}, ${b.a}"><span>${b.t}</span></button>`;
+    const len = b.t ? b.t.length : 0;
+    
+    const w = b.w || Math.min(62, Math.max(44, 44 + Math.floor(len * 0.4)));
+    const h = b.h || Math.min(230, Math.max(190, 190 + Math.floor(len * 0.8)));
+    const fontCls = len > 32 ? 'text-[10px]' : (len > 22 ? 'text-[11px]' : (len > 14 ? 'text-[12px]' : 'text-[13px]'));
+    
+    return `<button class="spine" data-i="${i}" style="--c:${b.c};--w:${w}px;--h:${h}px" aria-label="${b.t}, ${b.a}"><span class="${fontCls}" title="${b.t}">${b.t}</span></button>`;
 };
 const fill = k => {
     const r = (k * 7919) % 97;
@@ -91,7 +106,6 @@ const fill = k => {
 };
 const ladderSvg = `<svg viewBox="0 0 60 260" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="lw" x1="0" x2="1"><stop offset="0" stop-color="#6b4423"/><stop offset=".5" stop-color="#9a6a35"/><stop offset="1" stop-color="#5a3a1c"/></linearGradient></defs><circle cx="30" cy="9" r="8" fill="#241608"/><rect x="4" y="12" width="9" height="246" rx="3" fill="url(#lw)"/><rect x="47" y="12" width="9" height="246" rx="3" fill="url(#lw)"/><g stroke="#7a4a22" stroke-width="7" stroke-linecap="round"><line x1="9" y1="40" x2="51" y2="40"/><line x1="9" y1="78" x2="51" y2="78"/><line x1="9" y1="116" x2="51" y2="116"/><line x1="9" y1="154" x2="51" y2="154"/><line x1="9" y1="192" x2="51" y2="192"/><line x1="9" y1="230" x2="51" y2="230"/></g></svg>`;
 
-// Division dynamique en étagères
 const chunkSize = 4;
 const shelfCount = Math.max(1, Math.ceil(B.length / chunkSize));
 let rowsHtml = '';
@@ -109,7 +123,8 @@ for (let s = 0; s < shelfCount; s++) {
             shelfItemsHtml += fill(s * 20 + j);
         }
     }
-    rowsHtml += `<div class="relative">${s === 0 ? `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:14%">${ladderSvg}</button>` : ''}<div class="shelf">${shelfItemsHtml}</div><div class="plank"></div></div>`;
+    // L'échelle est positionnée sur le 1er livre fictif qui suit immédiatement le 1er livre réel (à 11.5%)
+    rowsHtml += `<div class="relative">${s === 0 ? `<div class="rail" aria-hidden="true"></div><button id="ladder" type="button" aria-label="Faire glisser l'échelle le long du rayon" class="ladder-wrap" style="left:11.5%">${ladderSvg}</button>` : ''}<div class="shelf">${shelfItemsHtml}</div><div class="plank"></div></div>`;
 }
 
 $('#rows').innerHTML = rowsHtml;
@@ -148,7 +163,6 @@ $('#rows').innerHTML = rowsHtml;
     };
 })();
 
-// Seules les catégories possédant des livres sont affichées
 const activeCats = ['Tout', ...DB_CATS];
 $('#cats').innerHTML = activeCats.map(c => `<button class="plate px-4 py-1 text-lg" aria-pressed="${c == 'Tout'}">${c}</button>`).join('');
 
@@ -198,6 +212,13 @@ function openBook(i, el) {
     $('#bd').textContent = b.d;
 
     const dlBtn = $('#dl-btn');
+    const loginDlBtn = $('#login-dl-btn');
+
+    dlBtn.classList.add('hidden');
+    dlBtn.classList.remove('inline-block');
+    loginDlBtn.classList.add('hidden');
+    loginDlBtn.classList.remove('inline-block');
+
     if (b.p === 0) {
         $('#bp').textContent = 'GRATUIT';
         $('#cur-unit').style.display = 'none';
@@ -207,8 +228,14 @@ function openBook(i, el) {
     } else {
         $('#bp').textContent = b.p.toLocaleString('fr-FR');
         $('#cur-unit').style.display = 'inline';
-        dlBtn.classList.add('hidden');
-        dlBtn.classList.remove('inline-block');
+        if (IS_LOGGED_IN) {
+            dlBtn.href = b.download_url;
+            dlBtn.classList.remove('hidden');
+            dlBtn.classList.add('inline-block');
+        } else {
+            loginDlBtn.classList.remove('hidden');
+            loginDlBtn.classList.add('inline-block');
+        }
     }
 
     $('#m').classList.replace('hidden', 'flex');
@@ -262,27 +289,6 @@ addEventListener('keydown', e => {
     if (e.key == 'ArrowRight') go(1);
     if (e.key == 'ArrowLeft') go(-1);
 });
-
-const toast = s => {
-    const t = $('#t');
-    t.textContent = s;
-    t.classList.add('on');
-    clearTimeout(tm);
-    tm = setTimeout(() => t.classList.remove('on'), 2400);
-};
-
-$('#add').onclick = () => {
-    cart.push(B[cur]);
-    $('#n').textContent = cart.length;
-    const c = $('#cart');
-    c.classList.remove('stamp');
-    void c.offsetWidth;
-    c.classList.add('stamp');
-    const label = B[cur].p === 0 ? 'gratuit' : `${B[cur].p.toLocaleString('fr-FR')} FCFA`;
-    toast(`« ${B[cur].t} » (${label}) est sur le comptoir`);
-};
-
-$('#cart').onclick = () => toast(cart.length ? `${cart.length} livre${cart.length > 1 ? 's' : ''} : ${cart.reduce((s, b) => s + b.p, 0).toLocaleString('fr-FR')} FCFA` : 'Le comptoir est vide pour l\u2019instant.');
 
 filt();
 </script>

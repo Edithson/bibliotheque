@@ -71,10 +71,26 @@
                         <span class="font-mono text-xs">{{ $b->nbr_pages }} p.</span>
                     </td>
                     <td>
-                        @if ($b->is_published)
-                            <span class="px-2 py-0.5 rounded text-xs bg-[#2f855a] text-white">Publié</span>
+                        @if (auth()->user()->isGerant())
+                            <form action="{{ route('admin.books.toggle-publish', $b->id) }}" method="POST" class="inline">
+                                @csrf
+                                @method('PATCH')
+                                @if ($b->is_published)
+                                    <button type="submit" class="px-2 py-0.5 rounded text-xs bg-[#2f855a] text-white cursor-pointer hover:bg-green-700" title="Cliquer pour masquer">
+                                        ✓ Publié
+                                    </button>
+                                @else
+                                    <button type="submit" class="px-2 py-0.5 rounded text-xs bg-[#9b2c2c] text-white cursor-pointer hover:bg-red-700" title="Cliquer pour valider & publier">
+                                        ⏳ Masqué / À valider
+                                    </button>
+                                @endif
+                            </form>
                         @else
-                            <span class="px-2 py-0.5 rounded text-xs bg-[#9b2c2c] text-white">Masqué</span>
+                            @if ($b->is_published)
+                                <span class="px-2 py-0.5 rounded text-xs bg-[#2f855a] text-white">Publié</span>
+                            @else
+                                <span class="px-2 py-0.5 rounded text-xs bg-[#9b2c2c] text-white">Masqué (Validation en attente)</span>
+                            @endif
                         @endif
                     </td>
                     <td class="font-mono text-xs">

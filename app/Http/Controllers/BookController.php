@@ -11,6 +11,7 @@ use App\Models\Download;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -49,7 +50,7 @@ class BookController extends Controller
             'download_url' => route('books.download', $b->slug),
         ])->values()->all();
 
-        return view('shop.index', [
+        return view('home.pages.shop.index', [
             'books' => $formattedBooks,
             'categories' => $categories,
         ]);
@@ -68,7 +69,7 @@ class BookController extends Controller
         $paidBooks = Book::where('price', '>', 0)->count();
         $publishedBooks = Book::where('is_published', true)->count();
 
-        return view('admin.index', [
+        return view('admin.pages.books.index', [
             'books' => $books,
             'categories' => $categories,
             'totalBooks' => $totalBooks,
@@ -85,7 +86,7 @@ class BookController extends Controller
     {
         $categories = Category::all();
 
-        return view('admin.books.create', compact('categories'));
+        return view('admin.pages.books.create', compact('categories'));
     }
 
     /**
@@ -95,28 +96,37 @@ class BookController extends Controller
     {
         $validated = $request->validated();
         $validated['slug'] = $this->generateUniqueSlug($validated['title']);
-        $validated['is_published'] = $request->boolean('is_published', true);
 
-        // Retirer book_file du tableau de données brutes Eloquent
+        $user = Auth::user();
+        // Si l'utilisateur est un simple auteur (niveau < 3), la publication reste en attente de validation
+        if ($user && ! $user->hasRoleLevel(3)) {
+            $validated['is_published'] = false;
+        } else {
+            $validated['is_published'] = $request->boolean('is_published', true);
+        }
+
         unset($validated['book_file']);
 
         $book = Book::create($validated);
 
         if ($request->hasFile('book_file')) {
             $tempPath = $request->file('book_file')->store('temp', 'local');
-            // Traiter via le job mis en queue
             ProcessBookFileUploadJob::dispatchSync($book, $tempPath);
         }
+
+        $message = ($user && ! $user->hasRoleLevel(3))
+            ? "L'ouvrage « {$book->title} » a été soumis et est en attente de validation par un gérant."
+            : "L'ouvrage « {$book->title} » a été créé avec succès.";
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Ouvrage numérique créé avec succès.',
+                'message' => $message,
                 'book' => $book,
             ], 201);
         }
 
-        return redirect()->route('admin.index')->with('success', "L'ouvrage « {$book->title} » a été ajouté au catalogue.");
+        return redirect()->route('admin.index')->with('success', $message);
     }
 
     /**
@@ -126,7 +136,7 @@ class BookController extends Controller
     {
         $categories = Category::all();
 
-        return view('admin.books.edit', compact('book', 'categories'));
+        return view('admin.pages.books.edit', compact('book', 'categories'));
     }
 
     /**
@@ -140,7 +150,14 @@ class BookController extends Controller
             $validated['slug'] = $this->generateUniqueSlug($validated['title'], $book->id);
         }
 
-        $validated['is_published'] = $request->boolean('is_published', true);
+        $user = Auth::user();
+        if ($user && ! $user->hasRoleLevel(3)) {
+            // Auteur ne peut pas auto-valider s'il modifie
+            $validated['is_published'] = false;
+        } else {
+            $validated['is_published'] = $request->boolean('is_published', $book->is_published);
+        }
+
         unset($validated['book_file']);
 
         $book->update($validated);
@@ -153,7 +170,7 @@ class BookController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Modifications de l\'ouvrage enregistrées.',
+                'message' => 'Modifications enregistrées.',
                 'book' => $book,
             ]);
         }
@@ -183,12 +200,24 @@ class BookController extends Controller
     }
 
     /**
+     * Toggle publication status of an e-book (Gérant & Admin).
+     */
+    public function togglePublish(Book $book): RedirectResponse
+    {
+        $book->update(['is_published' => ! $book->is_published]);
+
+        $status = $book->is_published ? 'publié' : 'masqué';
+
+        return redirect()->back()->with('success', "L'ouvrage « {$book->title} » est désormais {$status}.");
+    }
+
+    /**
      * Download free e-book file.
      */
-    public function download(Request $request, Book $book): StreamedResponse|BinaryFileResponse
+    public function download(Request $request, Book $book): RedirectResponse|StreamedResponse|BinaryFileResponse
     {
         if ($book->price !== 0 && ! auth()->check()) {
-            abort(403, 'Cet ouvrage n\'est pas disponible au téléchargement gratuit.');
+            return redirect()->route('login')->with('info', 'Veuillez vous connecter pour télécharger cet ouvrage.');
         }
 
         Download::create([
