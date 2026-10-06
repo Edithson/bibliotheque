@@ -45,7 +45,7 @@
             </label>
             <label>
                 <span class="block text-xs text-[#e9c96b] mb-1">Catégorie</span>
-                <select id="f_g" class="admin-field-select"></select>
+                <select id="f_g" class="admin-field-select" required></select>
             </label>
             <label>
                 <span class="block text-xs text-[#e9c96b] mb-1">Prix (FCFA)</span>
@@ -55,9 +55,17 @@
                 <span class="block text-xs text-[#e9c96b] mb-1">Stock</span>
                 <input id="f_s" type="number" min="0" class="admin-field-input" required>
             </label>
+            <label>
+                <span class="block text-xs text-[#e9c96b] mb-1">Couleur de couverture</span>
+                <input id="f_c" type="color" class="admin-field-input h-10 p-1" value="#5b1a1f">
+            </label>
             <label class="sm:col-span-2">
                 <span class="block text-xs text-[#e9c96b] mb-1">Description</span>
                 <textarea id="f_d" rows="2" class="admin-field-textarea"></textarea>
+            </label>
+            <label class="sm:col-span-2">
+                <span class="block text-xs text-[#e9c96b] mb-1">Extrait (séparer les pages avec le symbole |)</span>
+                <textarea id="f_x" rows="2" class="admin-field-textarea" placeholder="Première page...|Deuxième page..."></textarea>
             </label>
         </div>
         <div class="mt-5 flex justify-end gap-4">
@@ -71,21 +79,12 @@
 @push('scripts')
 <script>
 const $ = s => document.querySelector(s), fmt = n => n.toLocaleString('fr-FR');
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-const CATS = @json($categories->pluck('name'));
-let BOOKS = @json($books->map(function($b) {
-    return [
-        'id' => $b->id,
-        't' => $b->title,
-        'a' => $b->author ?? 'Inconnu',
-        'g' => $b->category ? $b->category->name : 'Général',
-        'p' => $b->price,
-        's' => $b->stock,
-        'd' => $b->description ?? ''
-    ];
-}));
+const RAW_CATS = @json($categories);
+let BOOKS = @json($books);
 
-let nextId = Math.max(0, ...BOOKS.map(b => b.id)) + 1, editId = null, tm;
+let editId = null, tm;
 
 function stats() {
     const val = BOOKS.reduce((s, b) => s + b.p * b.s, 0), ex = BOOKS.reduce((s, b) => s + b.s, 0), rupture = BOOKS.filter(b => b.s == 0).length;
@@ -94,7 +93,7 @@ function stats() {
 
 function rows() {
     const q = $('#q').value.trim().toLowerCase(), cat = $('#catf').value, list = BOOKS.filter(b => (cat == 'Tout' || b.g == cat) && (!q || (b.t + ' ' + b.a).toLowerCase().includes(q)));
-    $('#tbody').innerHTML = list.length ? list.map(b => `<tr><td class="font-semibold">${b.t}</td><td>${b.a}</td><td>${b.g}</td><td>${fmt(b.p)} FCFA</td><td class="${b.s == 0 ? 'font-bold text-[#8b1e1e]' : ''}">${b.s}</td><td class="whitespace-nowrap"><button class="underline" onclick="edit(${b.id})">Modifier</button> · <button class="text-[#8b1e1e] underline" onclick="del(${b.id})">Supprimer</button></td></tr>`).join('') : '<tr><td colspan="6" class="py-10 text-center italic">Aucun ouvrage ne correspond à cette recherche.</td></tr>';
+    $('#tbody').innerHTML = list.length ? list.map(b => `<tr><td class="font-semibold">${b.t} <br><small class="text-xs text-[#e9c96b]/60">slug: ${b.slug || '-'}</small></td><td>${b.a}</td><td>${b.g}</td><td>${fmt(b.p)} FCFA</td><td class="${b.s == 0 ? 'font-bold text-[#8b1e1e]' : ''}">${b.s}</td><td class="whitespace-nowrap"><button class="underline" onclick="edit(${b.id})">Modifier</button> · <button class="text-[#8b1e1e] underline" onclick="del(${b.id})">Supprimer</button></td></tr>`).join('') : '<tr><td colspan="6" class="py-10 text-center italic">Aucun ouvrage ne correspond à cette recherche.</td></tr>';
     $('#cnt').textContent = `${list.length} ouvrage${list.length > 1 ? 's' : ''} affiché${list.length > 1 ? 's' : ''} sur ${BOOKS.length}`;
 }
 
@@ -110,19 +109,39 @@ function edit(id) {
     $('#mt').textContent = "Modifier l'ouvrage";
     $('#f_t').value = b.t;
     $('#f_a').value = b.a;
-    $('#f_g').value = b.g;
+    $('#f_g').value = b.category_id || '';
     $('#f_p').value = b.p;
     $('#f_s').value = b.s;
-    $('#f_d').value = b.d;
+    $('#f_c').value = b.c || '#5b1a1f';
+    $('#f_d').value = b.d || '';
+    $('#f_x').value = b.x || '';
     openForm();
 }
 
-function del(id) {
+async function del(id) {
     const b = BOOKS.find(x => x.id == id);
     if (!b || !confirm(`Retirer « ${b.t} » du catalogue ?`)) return;
-    BOOKS = BOOKS.filter(x => x.id != id);
-    refresh();
-    toast('Ouvrage retiré du catalogue');
+
+    try {
+        const res = await fetch(`/admin/books/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            BOOKS = BOOKS.filter(x => x.id != id);
+            refresh();
+            toast(data.message || 'Ouvrage retiré du catalogue');
+        } else {
+            toast(data.message || 'Impossible de supprimer l\'ouvrage');
+        }
+    } catch (err) {
+        toast('Erreur lors de la communication avec le serveur.');
+    }
 }
 
 function toast(s) {
@@ -130,11 +149,11 @@ function toast(s) {
     e.textContent = s;
     e.classList.remove('opacity-0');
     clearTimeout(tm);
-    tm = setTimeout(() => e.classList.add('opacity-0'), 2200);
+    tm = setTimeout(() => e.classList.add('opacity-0'), 2500);
 }
 
-$('#f_g').innerHTML = CATS.map(c => `<option>${c}</option>`).join('');
-$('#catf').innerHTML = '<option>Tout</option>' + CATS.map(c => `<option>${c}</option>`).join('');
+$('#f_g').innerHTML = RAW_CATS.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+$('#catf').innerHTML = '<option value="Tout">Tout</option>' + RAW_CATS.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 $('#q').oninput = rows;
 $('#catf').onchange = rows;
 $('#new').onclick = openNew;
@@ -142,24 +161,53 @@ $('#cancel').onclick = closeForm;
 $('#m').onclick = e => { if (e.target.id == 'm') closeForm(); };
 addEventListener('keydown', e => { if (e.key == 'Escape' && !$('#m').classList.contains('hidden')) closeForm(); });
 
-$('#frm').onsubmit = e => {
+$('#frm').onsubmit = async e => {
     e.preventDefault();
-    const o = {
-        t: $('#f_t').value.trim(),
-        a: $('#f_a').value.trim(),
-        g: $('#f_g').value,
-        p: +$('#f_p').value,
-        s: +$('#f_s').value,
-        d: $('#f_d').value.trim()
+    const payload = {
+        title: $('#f_t').value.trim(),
+        author: $('#f_a').value.trim(),
+        category_id: $('#f_g').value,
+        price: +$('#f_p').value,
+        stock: +$('#f_s').value,
+        cover_color: $('#f_c').value,
+        description: $('#f_d').value.trim(),
+        excerpt: $('#f_x').value.trim()
     };
-    if (editId) {
-        Object.assign(BOOKS.find(x => x.id == editId), o);
-    } else {
-        BOOKS.push({ id: nextId++, ...o });
+
+    const url = editId ? `/admin/books/${editId}` : '/admin/books';
+    const method = editId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            const errs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Erreur de validation');
+            toast(errs);
+            return;
+        }
+
+        if (editId) {
+            const idx = BOOKS.findIndex(x => x.id == editId);
+            if (idx !== -1) BOOKS[idx] = data.book;
+        } else {
+            BOOKS.unshift(data.book);
+        }
+
+        closeForm();
+        refresh();
+        toast(data.message || 'Opération réussie');
+    } catch (err) {
+        toast('Erreur lors de la communication avec le serveur.');
     }
-    closeForm();
-    refresh();
-    toast(editId ? 'Modifications enregistrées' : 'Ouvrage ajouté au catalogue');
 };
 
 refresh();

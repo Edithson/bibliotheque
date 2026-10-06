@@ -1,19 +1,13 @@
 <?php
 
-use App\Models\Book;
-use App\Models\Category;
+use App\Http\Controllers\BookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $books = Book::with('category')->where('is_published', true)->get();
-    $categories = Category::all();
+Route::get('/', [BookController::class, 'shopIndex'])->name('shop.index');
 
-    return view('shop.index', compact('books', 'categories'));
-});
-
-Route::get('/admin', function () {
-    $books = Book::with('category')->get();
-    $categories = Category::all();
-
-    return view('admin.index', compact('books', 'categories'));
+Route::prefix('admin')->group(function () {
+    Route::get('/', [BookController::class, 'adminIndex'])->name('admin.index');
+    Route::post('/books', [BookController::class, 'store'])->name('admin.books.store');
+    Route::put('/books/{book}', [BookController::class, 'update'])->name('admin.books.update');
+    Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('admin.books.destroy');
 });
