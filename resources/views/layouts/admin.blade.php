@@ -29,6 +29,18 @@
                 <a href="{{ route('admin.categories.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.categories.*') ? '!brightness-125' : 'opacity-80' }}">
                     🏷️ Catégories
                 </a>
+
+                @php
+                    $unreadCountBadge = \App\Models\Contact::where('is_read', false)->count();
+                @endphp
+                <a href="{{ route('admin.contacts.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline relative {{ request()->routeIs('admin.contacts.*') ? '!brightness-125' : 'opacity-80' }}">
+                    📬 Messages
+                    @if ($unreadCountBadge > 0)
+                        <span class="ml-1 inline-flex items-center justify-center rounded-full bg-[#8b1e1e] px-1.5 py-0.5 text-xs font-bold text-white leading-none">
+                            {{ $unreadCountBadge }}
+                        </span>
+                    @endif
+                </a>
             @endif
 
             @if (auth()->user()->isAdmin())

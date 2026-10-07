@@ -22,6 +22,9 @@
                 <a href="{{ route('admin.categories.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
                     🏷️ Catégories
                 </a>
+                <a href="{{ route('admin.contacts.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                    📬 Messages de Contact
+                </a>
             @endif
             @if (auth()->user()->isAdmin())
                 <a href="{{ route('admin.users.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
