@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContactSubmittedMail;
 use App\Models\Book;
+use App\Models\Contact;
 use App\Models\Download;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -45,7 +48,12 @@ class PageController extends Controller
             'message' => ['required', 'string', 'min:10'],
         ]);
 
-        return redirect()->route('contact')->with('success', 'Votre message a été transmis au bibliothécaire avec succès. Nous vous répondrons dans les plus brefs délais.');
+        $contact = Contact::create($validated);
+
+        $adminEmail = config('mail.admin_address', 'moafogaus@gmail.com');
+        Mail::to($adminEmail)->queue(new ContactSubmittedMail($contact));
+
+        return redirect()->route('contact')->with('success', 'Votre message a été transmis au bibliothécaire avec succès et enregistré dans nos registres.');
     }
 
     /**
