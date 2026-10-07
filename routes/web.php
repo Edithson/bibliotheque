@@ -15,6 +15,7 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [PageController::class, 'sendContact'])->name('contact.send');
 Route::get('/my-books', [PageController::class, 'myBooks'])->name('my-books');
+Route::get('/books/{book:slug}', [BookController::class, 'shopShow'])->name('shop.books.show');
 Route::get('/books/{book:slug}/download', [BookController::class, 'download'])->name('books.download');
 
 // Guest Auth Routes
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'role:author'])->prefix('admin')->name('admin.')->gro
     Route::get('/books', [BookController::class, 'adminIndex'])->name('books.index');
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
+    Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');

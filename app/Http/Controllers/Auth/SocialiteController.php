@@ -40,7 +40,7 @@ class SocialiteController extends Controller
             [
                 'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Utilisateur Google',
                 'password' => Hash::make(Str::random(24)),
-                'type_id' => $guestType?->id,
+                'type_id' => $guestType?->id ?? 1,
             ]
         );
 

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'google_id', 'avatar', 'type_id'])]
+#[Fillable(['name', 'email', 'password', 'google_id', 'avatar', 'type_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,19 +41,30 @@ class User extends Authenticatable
         return $this->hasMany(Download::class);
     }
 
+    public function createdBooks(): HasMany
+    {
+        return $this->hasMany(Book::class, 'user_id');
+    }
+
+    /**
+     * Get string role name from type_id (1: guest, 2: auteur, 3: gerant, 4: admin).
+     */
+    public function getRoleAttribute(): string
+    {
+        return match ((int) ($this->type_id ?? 1)) {
+            4 => 'admin',
+            3 => 'gerant',
+            2 => 'auteur',
+            default => 'guest',
+        };
+    }
+
     /**
      * Get numeric role level for hierarchy (1: guest, 2: author, 3: gerant, 4: admin).
      */
     public function getRoleLevelAttribute(): int
     {
-        $roleName = strtolower($this->attributes['role'] ?? ($this->type?->name ?? 'guest'));
-
-        return match ($roleName) {
-            'admin' => 4,
-            'gerant' => 3,
-            'auteur', 'author' => 2,
-            default => 1,
-        };
+        return (int) ($this->type_id ?? 1);
     }
 
     public function hasRoleLevel(int $level): bool

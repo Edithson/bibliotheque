@@ -26,6 +26,8 @@ class Book extends Model
         'nbr_pages',
         'publish_year',
         'is_published',
+        'user_id',
+        'updated_by_user_id',
     ];
 
     protected function casts(): array
@@ -45,6 +47,16 @@ class Book extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by_user_id');
     }
 
     public function downloads(): HasMany
