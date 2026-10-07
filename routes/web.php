@@ -54,9 +54,13 @@ Route::middleware(['auth', 'role:author'])->prefix('admin')->name('admin.')->gro
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
 
-    // Admin Level (4): User Account & Role Management
+    // Admin Level (4): User Account & Role Management (CRUD)
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
