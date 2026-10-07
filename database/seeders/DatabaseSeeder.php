@@ -41,5 +41,8 @@ class DatabaseSeeder extends Seeder
 
         // Lancement du seeder pour les téléchargements
         $this->call(DownloadSeeder::class);
+
+        // Lancement du seeder pour les messages de contact
+        $this->call(ContactSeeder::class);
     }
 }
