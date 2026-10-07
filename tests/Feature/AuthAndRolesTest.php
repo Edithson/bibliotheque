@@ -1,13 +1,17 @@
 <?php
 
+use App\Mail\WelcomeUserMail;
 use App\Models\Book;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
-test('user registration defaults role to guest', function () {
+test('user registration defaults role to guest and queues welcome mail', function () {
+    Mail::fake();
+
     $response = $this->post('/register', [
         'name' => 'Nouveau Lecteur',
         'email' => 'lecteur@example.com',
@@ -22,6 +26,10 @@ test('user registration defaults role to guest', function () {
     expect($user->role)->toBe('guest');
     expect($user->role_level)->toBe(1);
     expect($user->isGuest())->toBeTrue();
+
+    Mail::assertQueued(WelcomeUserMail::class, function ($mail) {
+        return $mail->hasTo('lecteur@example.com') && $mail->user->name === 'Nouveau Lecteur';
+    });
 });
 
 test('unauthenticated user accessing admin is redirected to login', function () {
