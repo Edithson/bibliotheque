@@ -105,7 +105,9 @@
             @forelse ($books as $b)
                 <tr>
                     <td>
-                        <span class="font-semibold text-base block">{{ $b->title }}</span>
+                        <a href="{{ route('admin.books.show', $b->id) }}" class="font-semibold text-base block hover:underline text-[#e9c96b] hover:text-white" title="Cliquer pour voir la fiche détaillée & l'historique d'achats/téléchargements">
+                            {{ $b->title }}
+                        </a>
                         <span class="text-xs text-[#8b1e1e] font-mono block">slug: {{ $b->slug }}</span>
                     </td>
                     <td>{{ $b->author ?? 'Inconnu' }}</td>
@@ -156,12 +158,13 @@
                         @endif
                         <span class="block text-[10px] text-gray-500">{{ $b->updated_at->format('d/m/Y') }}</span>
                     </td>
-                    <td class="whitespace-nowrap">
-                        <a href="{{ route('admin.books.edit', $b->id) }}" class="underline font-semibold text-[#2a190e]">Modifier</a> · 
+                    <td class="whitespace-nowrap space-x-1">
+                        <a href="{{ route('admin.books.show', $b->id) }}" class="underline font-semibold text-amber-300 hover:text-white" title="Consulter la fiche & l'historique">🔍 Détails & Historique</a> · 
+                        <a href="{{ route('admin.books.edit', $b->id) }}" class="underline font-semibold text-gray-200 hover:text-white">Modifier</a> · 
                         <form action="{{ route('admin.books.destroy', $b->id) }}" method="POST" class="inline" onsubmit="return confirm('Retirer « {{ $b->title }} » du catalogue ?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="text-[#8b1e1e] underline bg-transparent border-0 p-0 cursor-pointer">Supprimer</button>
+                            <button type="submit" class="text-[#e05a3f] underline bg-transparent border-0 p-0 cursor-pointer hover:text-red-400">Supprimer</button>
                         </form>
                     </td>
                 </tr>

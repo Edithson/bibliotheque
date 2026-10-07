@@ -119,6 +119,47 @@ class BookController extends Controller
     }
 
     /**
+     * Display detailed book information, preview/reader, and download/purchase history (Admin).
+     */
+    public function show(Book $book): View
+    {
+        $book->load(['category', 'creator', 'updater']);
+
+        $downloads = $book->downloads()
+            ->with('user')
+            ->orderBy('id', 'desc')
+            ->paginate(15);
+
+        $totalDownloads = $book->downloads()->count();
+        $userDownloads = $book->downloads()->whereNotNull('user_id')->count();
+        $guestDownloads = $book->downloads()->whereNull('user_id')->count();
+        $estimatedRevenue = $book->price > 0 ? $totalDownloads * $book->price : 0;
+
+        return view('admin.pages.books.show', [
+            'book' => $book,
+            'downloads' => $downloads,
+            'totalDownloads' => $totalDownloads,
+            'userDownloads' => $userDownloads,
+            'guestDownloads' => $guestDownloads,
+            'estimatedRevenue' => $estimatedRevenue,
+        ]);
+    }
+
+    /**
+     * Display dedicated public book details consultation page.
+     */
+    public function shopShow(Book $book): View
+    {
+        if (! $book->is_published && (! auth()->check() || ! auth()->user()->hasRoleLevel(2))) {
+            abort(404);
+        }
+
+        $book->load('category');
+
+        return view('home.pages.shop.show', compact('book'));
+    }
+
+    /**
      * Show dedicated form page for creating a new e-book.
      */
     public function create(): View
