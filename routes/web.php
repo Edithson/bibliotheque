@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -72,6 +73,9 @@ Route::middleware(['auth', 'role:author'])->prefix('admin')->name('admin.')->gro
         Route::get('/contacts', [ContactController::class, 'index'])->name('contacts.index');
         Route::get('/contacts/{contact}', [ContactController::class, 'show'])->name('contacts.show');
         Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])->name('contacts.destroy');
+
+        Route::get('/downloads', [DownloadController::class, 'index'])->name('downloads.index');
+        Route::get('/downloads/export', [DownloadController::class, 'export'])->name('downloads.export');
     });
 
     // Admin Level (4): User Account & Role Management (CRUD)

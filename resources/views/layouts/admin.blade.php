@@ -41,6 +41,10 @@
                         </span>
                     @endif
                 </a>
+
+                <a href="{{ route('admin.downloads.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.downloads.*') ? '!brightness-125' : 'opacity-80' }}">
+                    📊 Téléchargements
+                </a>
             @endif
 
             @if (auth()->user()->isAdmin())
