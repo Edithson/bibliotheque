@@ -62,6 +62,10 @@
                     <input type="checkbox" name="remember" class="rounded accent-[#b98a2e]">
                     <span class="font-garamond text-sm text-[#e9c96b]/80">Se souvenir de moi</span>
                 </label>
+
+                <a href="{{ route('password.request') }}" class="font-garamond text-sm text-[#e9c96b]/80 hover:text-[#e9c96b] underline italic">
+                    Mot de passe oublié ?
+                </a>
             </div>
 
             <div class="pt-2">
