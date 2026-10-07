@@ -36,6 +36,12 @@
                     👥 Comptes & Rôles
                 </a>
             @endif
+
+            @if (request()->routeIs('profile.edit'))
+                <a href="{{ route('profile.edit') }}" class="plate px-4 py-1.5 text-base hover:no-underline !brightness-125">
+                    ⚙️ Mon Profil
+                </a>
+            @endif
         </nav>
 
         @yield('header_stats')
