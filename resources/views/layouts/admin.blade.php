@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Bureau du Bibliothécaire — Administration')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('media/img/ours.png') }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="px-3 pb-16 pt-6 sm:px-6 min-h-screen text-[#f3e7cc] font-garamond" style="background:#1b1209;background-image:radial-gradient(ellipse 900px 500px at 50% -10%,#2f2011,transparent),linear-gradient(#17100a,#120c06)">

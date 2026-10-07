@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'La Bibliothèque des Mots')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('media/img/ours.png') }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-[#2a190e] text-[#f3e7cc] font-garamond min-h-screen relative flex flex-col justify-between" style="background: repeating-linear-gradient(90deg,#2c1b10 0 3px,#341f11 3px 8px,#2a190e 8px 13px),#2a190e">
