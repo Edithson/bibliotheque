@@ -41,6 +41,12 @@
 
         <div class="border-t border-[#4a2c17] my-1"></div>
 
+        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+            ⚙️ Mon Profil
+        </a>
+
+        <div class="border-t border-[#4a2c17] my-1"></div>
+
         <form action="{{ route('logout') }}" method="POST">
             @csrf
             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#2a190e] hover:text-red-300 cursor-pointer">
