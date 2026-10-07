@@ -343,3 +343,43 @@ html {
         transition: none !important;
     }
 }
+
+/* High-Contrast Pagination for Dark Brown Vintage Theme */
+nav[role="navigation"] {
+    color: #ffffff !important;
+}
+
+nav[role="navigation"] p,
+nav[role="navigation"] span.font-medium {
+    color: #f3d98b !important;
+}
+
+nav[role="navigation"] a {
+    color: #ffffff !important;
+    background-color: #3b2514 !important;
+    border-color: #6b4a12 !important;
+}
+
+nav[role="navigation"] a:hover {
+    color: #ffffff !important;
+    background-color: #5c3b1e !important;
+    border-color: #b98a2e !important;
+}
+
+nav[role="navigation"] span[aria-disabled="true"] > span {
+    color: #a0aec0 !important;
+    background-color: #271a0d !important;
+    border-color: #4a2c17 !important;
+}
+
+nav[role="navigation"] span[aria-current="page"] > span {
+    background: linear-gradient(135deg, #f3d98b, #b98a2e) !important;
+    color: #2a190e !important;
+    font-weight: 700 !important;
+    border-color: #8a6420 !important;
+}
+
+nav[role="navigation"] svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
+}
