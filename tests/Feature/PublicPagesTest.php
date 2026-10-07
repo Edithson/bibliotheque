@@ -45,7 +45,7 @@ test('my-books page redirects guest to login', function () {
 });
 
 test('my-books page displays acquired books for logged in user', function () {
-    $user = User::factory()->create(['role' => 'guest']);
+    $user = User::factory()->guest()->create();
     $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
 
     $book = Book::create([

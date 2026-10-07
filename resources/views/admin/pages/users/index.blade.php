@@ -52,11 +52,11 @@
                         <form action="{{ route('admin.users.update-role', $u->id) }}" method="POST" class="flex items-center gap-2">
                             @csrf
                             @method('PATCH')
-                            <select name="role" class="admin-field-select !py-1 !text-sm">
-                                <option value="guest" {{ $u->role === 'guest' ? 'selected' : '' }}>Guest (Visiteur)</option>
-                                <option value="auteur" {{ $u->role === 'auteur' ? 'selected' : '' }}>Auteur</option>
-                                <option value="gerant" {{ $u->role === 'gerant' ? 'selected' : '' }}>Gérant</option>
-                                <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>Administrateur</option>
+                            <select name="type_id" class="admin-field-select !py-1 !text-sm">
+                                <option value="1" {{ $u->type_id == 1 ? 'selected' : '' }}>Guest (Visiteur)</option>
+                                <option value="2" {{ $u->type_id == 2 ? 'selected' : '' }}>Auteur</option>
+                                <option value="3" {{ $u->type_id == 3 ? 'selected' : '' }}>Gérant</option>
+                                <option value="4" {{ $u->type_id == 4 ? 'selected' : '' }}>Administrateur</option>
                             </select>
                             <button type="submit" class="plate px-3 py-1 text-xs whitespace-nowrap">Mettre à jour</button>
                         </form>

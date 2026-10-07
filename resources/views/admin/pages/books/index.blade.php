@@ -37,17 +37,67 @@
     </a>
 </div>
 
+{{-- Barre de recherche et de filtres avancés --}}
+<form method="GET" action="{{ route('admin.books.index') }}" class="card2 mt-4 p-4 space-y-3 font-garamond text-sm">
+    <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <div>
+            <label for="search" class="block text-xs font-bold text-[#e9c96b] mb-1">Recherche (Titre, Auteur, Extrait...)</label>
+            <input id="search" type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Mots-clés..." class="admin-field-input !py-1 !text-sm">
+        </div>
+
+        <div>
+            <label for="category_id" class="block text-xs font-bold text-[#e9c96b] mb-1">Catégorie</label>
+            <select id="category_id" name="category_id" class="admin-field-select !py-1 !text-sm">
+                <option value="">-- Toutes les catégories --</option>
+                @foreach ($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ ($filters['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label for="status" class="block text-xs font-bold text-[#e9c96b] mb-1">Statut de publication</label>
+            <select id="status" name="status" class="admin-field-select !py-1 !text-sm">
+                <option value="">-- Tous les statuts --</option>
+                <option value="published" {{ ($filters['status'] ?? '') === 'published' ? 'selected' : '' }}>✓ Publiés uniquement</option>
+                <option value="hidden" {{ ($filters['status'] ?? '') === 'hidden' ? 'selected' : '' }}>⏳ Masqués / À valider</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="user_id" class="block text-xs font-bold text-[#e9c96b] mb-1">Créateur / Auteur</label>
+            <select id="user_id" name="user_id" class="admin-field-select !py-1 !text-sm">
+                <option value="">-- Tous les créateurs --</option>
+                @foreach ($creators as $creator)
+                    <option value="{{ $creator->id }}" {{ ($filters['user_id'] ?? '') == $creator->id ? 'selected' : '' }}>
+                        {{ $creator->name }} ({{ $creator->role }})
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-1 border-t border-[#4a2c17]/60">
+        @if (array_filter($filters ?? []))
+            <a href="{{ route('admin.books.index') }}" class="text-xs text-[#e9c96b]/80 underline hover:text-white">Réinitialiser les filtres</a>
+        @endif
+        <button type="submit" class="plate px-4 py-1 text-sm font-bold">🔍 Filtrer le registre</button>
+    </div>
+</form>
+
 <div class="card2 mt-4 overflow-x-auto">
-    <table class="ledger w-full min-w-[750px] text-left font-garamond text-base">
+    <table class="ledger w-full min-w-[850px] text-left font-garamond text-base">
         <thead>
             <tr>
                 <th>Titre & Slug</th>
                 <th>Auteur</th>
                 <th>Catégorie</th>
                 <th>Tarif</th>
-                <th>Pages</th>
                 <th>Visibilité</th>
-                <th>Fichier PDF / E-Book</th>
+                <th>Créé par</th>
+                <th>Dernière modif.</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -66,9 +116,6 @@
                         @else
                             <b>{{ number_format($b->price, 0, ',', ' ') }}</b> FCFA
                         @endif
-                    </td>
-                    <td>
-                        <span class="font-mono text-xs">{{ $b->nbr_pages }} p.</span>
                     </td>
                     <td>
                         @if (auth()->user()->isGerant())
@@ -94,11 +141,20 @@
                         @endif
                     </td>
                     <td class="font-mono text-xs">
-                        @if ($b->file_path)
-                            <span class="text-[#2b6cb0]" title="{{ $b->file_path }}">📄 {{ basename($b->file_path) }}</span>
+                        @if ($b->creator)
+                            <span class="font-semibold text-[#2a190e]">{{ $b->creator->name }}</span>
+                            <span class="block text-[10px] text-gray-600">({{ $b->creator->role }})</span>
                         @else
-                            <span class="italic text-gray-400">Aucun</span>
+                            <span class="italic text-gray-500">Système</span>
                         @endif
+                    </td>
+                    <td class="font-mono text-xs">
+                        @if ($b->updater)
+                            <span class="text-[#2a190e]">{{ $b->updater->name }}</span>
+                        @else
+                            <span class="italic text-gray-500">-</span>
+                        @endif
+                        <span class="block text-[10px] text-gray-500">{{ $b->updated_at->format('d/m/Y') }}</span>
                     </td>
                     <td class="whitespace-nowrap">
                         <a href="{{ route('admin.books.edit', $b->id) }}" class="underline font-semibold text-[#2a190e]">Modifier</a> · 
@@ -111,7 +167,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="py-10 text-center italic">Aucun ouvrage numérique disponible dans le catalogue.</td>
+                    <td colspan="8" class="py-10 text-center italic">Aucun ouvrage numérique ne correspond aux critères de recherche.</td>
                 </tr>
             @endforelse
         </tbody>

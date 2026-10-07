@@ -30,14 +30,14 @@ test('unauthenticated user accessing admin is redirected to login', function () 
 });
 
 test('guest role user receives 403 forbidden when accessing admin', function () {
-    $guestUser = User::factory()->create(['role' => 'guest']);
+    $guestUser = User::factory()->guest()->create();
 
     $response = $this->actingAs($guestUser)->get('/admin');
     $response->assertStatus(403);
 });
 
 test('author role user can access admin and submit book but is_published is forced to false', function () {
-    $authorUser = User::factory()->create(['role' => 'auteur']);
+    $authorUser = User::factory()->author()->create();
     $category = Category::create(['name' => 'Poésie', 'slug' => 'poesie']);
 
     $response = $this->actingAs($authorUser)->get('/admin');
@@ -59,14 +59,14 @@ test('author role user can access admin and submit book but is_published is forc
 });
 
 test('author role user cannot access categories or users admin management', function () {
-    $authorUser = User::factory()->create(['role' => 'auteur']);
+    $authorUser = User::factory()->author()->create();
 
     $this->actingAs($authorUser)->get('/admin/categories')->assertStatus(403);
     $this->actingAs($authorUser)->get('/admin/users')->assertStatus(403);
 });
 
 test('gerant role user can manage categories and publish books but cannot manage users', function () {
-    $gerantUser = User::factory()->create(['role' => 'gerant']);
+    $gerantUser = User::factory()->gerant()->create();
     $category = Category::create(['name' => 'Essai', 'slug' => 'essai']);
 
     $book = Book::create([
@@ -91,15 +91,15 @@ test('gerant role user can manage categories and publish books but cannot manage
 });
 
 test('admin role user can manage user roles', function () {
-    $adminUser = User::factory()->create(['role' => 'admin']);
-    $targetUser = User::factory()->create(['role' => 'guest']);
+    $adminUser = User::factory()->admin()->create();
+    $targetUser = User::factory()->guest()->create();
 
     $response = $this->actingAs($adminUser)->get('/admin/users');
     $response->assertStatus(200);
     $response->assertSee($targetUser->email);
 
     $response = $this->actingAs($adminUser)->patch("/admin/users/{$targetUser->id}/role", [
-        'role' => 'gerant',
+        'type_id' => 3,
     ]);
 
     $response->assertRedirect();
@@ -134,7 +134,7 @@ test('downloading paid book requires login while free book allows guest', functi
     $this->get("/books/{$paidBook->slug}/download")->assertRedirect('/login');
 
     // Paid book downloadable when logged in
-    $user = User::factory()->create(['role' => 'guest']);
+    $user = User::factory()->guest()->create();
     $this->actingAs($user)->get("/books/{$paidBook->slug}/download")->assertStatus(200);
 });
 

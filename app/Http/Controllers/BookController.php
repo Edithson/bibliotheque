@@ -8,6 +8,7 @@ use App\Jobs\ProcessBookFileUploadJob;
 use App\Models\Book;
 use App\Models\Category;
 use App\Models\Download;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,12 +58,43 @@ class BookController extends Controller
     }
 
     /**
-     * Display administration ledger interface with pagination.
+     * Display administration ledger interface with search, filters and pagination.
      */
-    public function adminIndex(): View
+    public function adminIndex(Request $request): View
     {
-        $books = Book::with('category')->orderBy('id', 'desc')->paginate(10);
+        $search = $request->query('search');
+        $categoryId = $request->query('category_id');
+        $status = $request->query('status');
+        $creatorId = $request->query('user_id');
+
+        $query = Book::with(['category', 'creator', 'updater'])->orderBy('id', 'desc');
+
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('excerpt', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($categoryId)) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($status === 'published') {
+            $query->where('is_published', true);
+        } elseif ($status === 'hidden') {
+            $query->where('is_published', false);
+        }
+
+        if (! empty($creatorId)) {
+            $query->where('user_id', $creatorId);
+        }
+
+        $books = $query->paginate(10)->withQueryString();
         $categories = Category::all();
+        $creators = User::whereHas('createdBooks')->orWhere('type_id', '>', 1)->get();
 
         $totalBooks = Book::count();
         $freeBooks = Book::where('price', 0)->count();
@@ -72,10 +104,17 @@ class BookController extends Controller
         return view('admin.pages.books.index', [
             'books' => $books,
             'categories' => $categories,
+            'creators' => $creators,
             'totalBooks' => $totalBooks,
             'freeBooks' => $freeBooks,
             'paidBooks' => $paidBooks,
             'publishedBooks' => $publishedBooks,
+            'filters' => [
+                'search' => $search,
+                'category_id' => $categoryId,
+                'status' => $status,
+                'user_id' => $creatorId,
+            ],
         ]);
     }
 
@@ -98,6 +137,11 @@ class BookController extends Controller
         $validated['slug'] = $this->generateUniqueSlug($validated['title']);
 
         $user = Auth::user();
+        if ($user) {
+            $validated['user_id'] = $user->id;
+            $validated['updated_by_user_id'] = $user->id;
+        }
+
         // Si l'utilisateur est un simple auteur (niveau < 3), la publication reste en attente de validation
         if ($user && ! $user->hasRoleLevel(3)) {
             $validated['is_published'] = false;
@@ -151,6 +195,10 @@ class BookController extends Controller
         }
 
         $user = Auth::user();
+        if ($user) {
+            $validated['updated_by_user_id'] = $user->id;
+        }
+
         if ($user && ! $user->hasRoleLevel(3)) {
             // Auteur ne peut pas auto-valider s'il modifie
             $validated['is_published'] = false;
@@ -204,7 +252,10 @@ class BookController extends Controller
      */
     public function togglePublish(Book $book): RedirectResponse
     {
-        $book->update(['is_published' => ! $book->is_published]);
+        $book->update([
+            'is_published' => ! $book->is_published,
+            'updated_by_user_id' => Auth::id(),
+        ]);
 
         $status = $book->is_published ? 'publié' : 'masqué';
 

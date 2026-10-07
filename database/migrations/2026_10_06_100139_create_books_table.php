@@ -27,9 +27,12 @@ return new class extends Migration
             $table->integer('publish_year')->nullable()->default(2026);
             $table->boolean('is_published')->default(true)->index();
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index(['is_published', 'price']);
+            $table->index('user_id');
         });
     }
 

@@ -25,12 +25,20 @@ class UserController extends Controller
     public function updateRole(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'role' => ['required', 'in:guest,auteur,gerant,admin'],
+            'type_id' => ['nullable', 'exists:types,id'],
+            'role' => ['nullable', 'in:guest,auteur,gerant,admin'],
         ]);
 
-        $user->update(['role' => $validated['role']]);
+        if (! empty($validated['type_id'])) {
+            $typeId = (int) $validated['type_id'];
+        } else {
+            $roleMap = ['guest' => 1, 'auteur' => 2, 'gerant' => 3, 'admin' => 4];
+            $typeId = $roleMap[$validated['role'] ?? 'guest'] ?? 1;
+        }
 
-        return redirect()->route('admin.users.index')->with('success', "Le rôle de l'utilisateur {$user->name} a été mis à jour vers « {$validated['role']} ».");
+        $user->update(['type_id' => $typeId]);
+
+        return redirect()->route('admin.users.index')->with('success', "Le rôle de l'utilisateur {$user->name} a été mis à jour vers « {$user->role} ».");
     }
 
     /**

@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Création des types d'utilisateurs
-        $types = ['guest', 'user', 'admin'];
+        // Création des types d'utilisateurs (1: guest, 2: auteur, 3: gerant, 4: admin)
+        $types = ['guest', 'auteur', 'gerant', 'admin'];
         foreach ($types as $typeName) {
             Type::firstOrCreate(['name' => $typeName]);
         }
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => bcrypt('c@rabine21'),
-                'type_id' => $adminType?->id,
+                'type_id' => $adminType?->id ?? 4,
             ]
         );
 

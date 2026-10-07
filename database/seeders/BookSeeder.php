@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class BookSeeder extends Seeder
@@ -144,12 +145,18 @@ class BookSeeder extends Seeder
             ],
         ];
 
+        $defaultUser = User::first();
+
         foreach ($books as $bookData) {
             $categorySlug = $bookData['category_slug'];
             unset($bookData['category_slug']);
 
             $category = Category::where('slug', $categorySlug)->first();
             $bookData['category_id'] = $category ? $category->id : null;
+            if ($defaultUser) {
+                $bookData['user_id'] = $defaultUser->id;
+                $bookData['updated_by_user_id'] = $defaultUser->id;
+            }
 
             Book::firstOrCreate(['slug' => $bookData['slug']], $bookData);
         }
