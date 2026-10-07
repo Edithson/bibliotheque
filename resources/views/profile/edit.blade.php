@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends(auth()->user()->isAuthor() ? 'layouts.admin' : 'layouts.app')
 
 @section('title', 'Mon Profil — La Bibliothèque des Mots')
 
 @section('content')
-<main class="mx-auto max-w-4xl px-4 pb-16 pt-24 sm:px-6 font-garamond">
+<main class="{{ auth()->user()->isAuthor() ? 'mx-auto max-w-5xl font-garamond' : 'mx-auto max-w-4xl px-4 pb-16 pt-24 sm:px-6 font-garamond' }}">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#4a2c17] pb-4">
         <div>
             <p class="font-garamond text-sm italic text-[#e9c96b]/70">Espace personnel</p>
@@ -12,7 +12,11 @@
 
         @if(auth()->user()->isAuthor())
             <a href="{{ route('admin.index') }}" class="plate px-4 py-1.5 text-sm font-semibold hover:no-underline">
-                🏛️ Accéder au Bureau Admin
+                📚 Registre des Livres
+            </a>
+        @else
+            <a href="{{ route('shop.index') }}" class="plate px-4 py-1.5 text-sm font-semibold hover:no-underline">
+                🏠 Retour aux Rayons
             </a>
         @endif
     </div>
@@ -101,6 +105,40 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    {{-- Card 3: Suppression du Compte (Non-administrateurs uniquement) --}}
+    <div class="mt-8 card2 p-6">
+        <h2 class="font-cinzel text-xl font-bold text-[#e05a3f] border-b border-[#4a2c17] pb-3">Suppression du Compte</h2>
+        
+        @if ($user->isAdmin())
+            <div class="mt-4 p-4 rounded bg-[#2b170c] border border-[#6b2a1a] text-amber-200 text-sm">
+                🔒 <b>Compte Administrateur protégé</b> : En tant qu'administrateur système, votre compte ne peut pas être supprimé directement afin d'éviter le verrouillage du bureau du bibliothécaire.
+            </div>
+        @else
+            <div class="mt-4 space-y-4">
+                <p class="text-sm text-gray-300">
+                    Une fois votre compte supprimé, toutes vos données d'accès seront définitivement effacées. Veuillez confirmer avec votre mot de passe actuel avant de procéder.
+                </p>
+
+                <form action="{{ route('profile.destroy') }}" method="POST" class="space-y-4 max-w-xl" onsubmit="return confirm('Êtes-vous absolument sûr de vouloir supprimer définitivement votre compte ? Cette action est irréversible.')">
+                    @csrf
+                    @method('DELETE')
+
+                    <div>
+                        <label for="delete_password" class="block text-sm font-semibold text-red-300 mb-1">Confirmer avec votre mot de passe actuel *</label>
+                        <input id="delete_password" type="password" name="password" required class="admin-field-input !border-red-800" placeholder="Mot de passe actuel">
+                        @error('password')
+                            <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button type="submit" class="px-5 py-2 rounded font-bold bg-[#8b1e1e] hover:bg-red-700 text-white text-base transition cursor-pointer border border-red-900 shadow">
+                        🗑️ Supprimer définitivement mon compte
+                    </button>
+                </form>
+            </div>
+        @endif
     </div>
 </main>
 @endsection

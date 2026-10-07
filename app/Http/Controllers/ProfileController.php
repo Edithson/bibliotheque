@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
@@ -55,5 +56,30 @@ class ProfileController extends Controller
         ]);
 
         return redirect()->route('profile.edit')->with('success', 'Votre mot de passe a été modifié avec succès.');
+    }
+
+    /**
+     * Delete user's own account (Non-admin users only).
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('profile.edit')->with('error', 'Les administrateurs ne peuvent pas supprimer leur propre compte afin d\'éviter le verrouillage du système.');
+        }
+
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('success', 'Votre compte a été supprimé avec succès.');
     }
 }

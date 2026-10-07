@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 
@@ -54,4 +55,73 @@ test('authenticated user can update their password', function () {
 
     $user->refresh();
     expect(Hash::check('new-secure-password', $user->password))->toBeTrue();
+});
+
+test('profile page uses admin layout for back-office users (author, gerant, admin)', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/profile');
+    $response->assertStatus(200);
+    $response->assertSee('Registre des Livres');
+});
+
+test('profile page uses guest layout for regular guest users', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $guest = User::factory()->guest()->create();
+
+    $response = $this->actingAs($guest)->get('/profile');
+    $response->assertStatus(200);
+    $response->assertSee('Retour aux Rayons');
+});
+
+test('non-admin user can delete their account with password confirmation', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $user = User::factory()->guest()->create([
+        'password' => Hash::make('password123'),
+    ]);
+
+    $response = $this->actingAs($user)->delete('/profile', [
+        'password' => 'password123',
+    ]);
+
+    $response->assertRedirect('/');
+    $response->assertSessionHas('success');
+
+    $this->assertGuest();
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+test('non-admin user cannot delete account with incorrect password', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $user = User::factory()->guest()->create([
+        'password' => Hash::make('password123'),
+    ]);
+
+    $response = $this->actingAs($user)->delete('/profile', [
+        'password' => 'wrong-password',
+    ]);
+
+    $response->assertSessionHasErrors('password');
+    $this->assertDatabaseHas('users', ['id' => $user->id]);
+});
+
+test('admin user cannot delete their own account', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $admin = User::factory()->admin()->create([
+        'password' => Hash::make('password123'),
+    ]);
+
+    $response = $this->actingAs($admin)->delete('/profile', [
+        'password' => 'password123',
+    ]);
+
+    $response->assertRedirect('/profile');
+    $response->assertSessionHas('error');
+    $this->assertDatabaseHas('users', ['id' => $admin->id]);
 });
