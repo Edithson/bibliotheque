@@ -15,21 +15,23 @@
                 🏠 Retour à la boutique
             </a>
             <div class="border-t border-[#4a2c17] my-1"></div>
-            <a href="{{ route('admin.books.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
-                📚 Registre des Livres
-            </a>
-            @if (auth()->user()->isGerant())
-                <a href="{{ route('admin.categories.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
-                    🏷️ Catégories
-                </a>
-                <a href="{{ route('admin.contacts.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
-                    📬 Messages de Contact
+            @if (auth()->user()->isAuthor())
+                <a href="{{ route('admin.books.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                    📚 Registre des Livres
                 </a>
                 <a href="{{ route('admin.downloads.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
                     📊 Téléchargements
                 </a>
             @endif
+            @if (auth()->user()->isGerant())
+                <a href="{{ route('admin.categories.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                    🏷️ Catégories
+                </a>
+            @endif
             @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.contacts.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
+                    📬 Messages de Contact
+                </a>
                 <a href="{{ route('admin.users.index') }}" class="block px-4 py-2 text-sm text-[#f3e7cc] hover:bg-[#2a190e] hover:text-[#e9c96b]">
                     👥 Comptes & Rôles
                 </a>

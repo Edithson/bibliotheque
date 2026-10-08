@@ -13,11 +13,11 @@ beforeEach(function () {
     $this->seed(DatabaseSeeder::class);
 });
 
-test('unauthorized users (guest or simple author) cannot access admin downloads index or export', function () {
-    $author = User::factory()->author()->create();
+test('unauthorized guest user cannot access admin downloads index or export', function () {
+    $guest = User::factory()->guest()->create();
 
-    $this->actingAs($author)->get('/admin/downloads')->assertStatus(403);
-    $this->actingAs($author)->get('/admin/downloads/export')->assertStatus(403);
+    $this->actingAs($guest)->get('/admin/downloads')->assertStatus(403);
+    $this->actingAs($guest)->get('/admin/downloads/export')->assertStatus(403);
 });
 
 test('gerant and admin users can access admin downloads index with analytics KPIs', function () {

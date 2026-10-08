@@ -17,15 +17,28 @@ class DownloadController extends Controller
     public function index(Request $request): View
     {
         $categories = Category::all();
+        $user = auth()->user();
+        $isAuthorOnly = $user && ! $user->isGerant();
 
         // Analytics KPIs
-        $totalDownloads = Download::count();
-        $downloadsThisMonth = Download::whereMonth('created_at', now()->month)
+        $downloadQuery = Download::query();
+        if ($isAuthorOnly) {
+            $downloadQuery->whereHas('book', fn ($q) => $q->where('user_id', $user->id));
+        }
+
+        $totalDownloads = (clone $downloadQuery)->count();
+        $downloadsThisMonth = (clone $downloadQuery)
+            ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        $freeDownloads = Download::whereHas('book', fn ($q) => $q->where('price', 0))->count();
-        $paidDownloads = Download::whereHas('book', fn ($q) => $q->where('price', '>', 0))->count();
-        $topBook = Book::withCount('downloads')->orderByDesc('downloads_count')->first();
+        $freeDownloads = (clone $downloadQuery)->whereHas('book', fn ($q) => $q->where('price', 0))->count();
+        $paidDownloads = (clone $downloadQuery)->whereHas('book', fn ($q) => $q->where('price', '>', 0))->count();
+
+        $topBookQuery = Book::withCount('downloads');
+        if ($isAuthorOnly) {
+            $topBookQuery->where('user_id', $user->id);
+        }
+        $topBook = $topBookQuery->orderByDesc('downloads_count')->first();
 
         // Filtered downloads query
         $query = $this->buildFilteredQuery($request);
@@ -101,6 +114,11 @@ class DownloadController extends Controller
     protected function buildFilteredQuery(Request $request)
     {
         $query = Download::with(['book.category', 'user']);
+        $user = auth()->user();
+
+        if ($user && ! $user->isGerant()) {
+            $query->whereHas('book', fn ($q) => $q->where('user_id', $user->id));
+        }
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {

@@ -127,7 +127,8 @@ test('can download a free e-book and logs the download entry', function () {
         'is_published' => true,
     ]);
 
-    $response = $this->get("/books/{$book->slug}/download");
+    $user = User::factory()->guest()->create();
+    $response = $this->actingAs($user)->get("/books/{$book->slug}/download");
 
     $response->assertStatus(200);
     $response->assertHeader('content-type', 'application/pdf');

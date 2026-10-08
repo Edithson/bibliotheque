@@ -23,10 +23,6 @@
                     @auth
                         <x-user-dropdown :is-admin="false" />
                     @else
-                        <a href="{{ route('my-books') }}" class="font-garamond text-sm text-[#e9c96b]/80 hover:text-white underline">
-                            📚 Mes Livres
-                        </a>
-
                         <a href="{{ route('login') }}" class="plate px-4 py-1.5 text-sm font-bold hover:no-underline inline-block shadow-md">
                             🔑 Connexion / Inscription
                         </a>

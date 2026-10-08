@@ -45,7 +45,7 @@ test('unauthorized users (guest or simple author) cannot access back-office cont
     $this->actingAs($author)->get('/admin/contacts')->assertStatus(403);
 });
 
-test('gerant and admin users can access back-office contact messages', function () {
+test('gerant is forbidden while admin can access back-office contact messages', function () {
     $gerant = User::factory()->gerant()->create();
     $admin = User::factory()->admin()->create();
 
@@ -57,8 +57,7 @@ test('gerant and admin users can access back-office contact messages', function 
     ]);
 
     $responseGerant = $this->actingAs($gerant)->get('/admin/contacts');
-    $responseGerant->assertStatus(200);
-    $responseGerant->assertSee('Alexandre Dumas');
+    $responseGerant->assertStatus(403);
 
     $responseAdmin = $this->actingAs($admin)->get('/admin/contacts');
     $responseAdmin->assertStatus(200);

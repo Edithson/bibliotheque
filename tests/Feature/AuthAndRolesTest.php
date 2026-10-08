@@ -135,14 +135,15 @@ test('downloading paid book requires login while free book allows guest', functi
         'is_published' => true,
     ]);
 
-    // Free book downloadable by guest
-    $this->get("/books/{$freeBook->slug}/download")->assertStatus(200);
+    // Free book redirects guest to login
+    $this->get("/books/{$freeBook->slug}/download")->assertRedirect('/login');
 
     // Paid book redirects guest to login
     $this->get("/books/{$paidBook->slug}/download")->assertRedirect('/login');
 
-    // Paid book downloadable when logged in
+    // Free and paid books downloadable when logged in
     $user = User::factory()->guest()->create();
+    $this->actingAs($user)->get("/books/{$freeBook->slug}/download")->assertStatus(200);
     $this->actingAs($user)->get("/books/{$paidBook->slug}/download")->assertStatus(200);
 });
 
