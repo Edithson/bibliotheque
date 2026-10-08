@@ -72,4 +72,64 @@
         </div>
     </form>
 </div>
+
+{{-- Modale de confirmation pour l'attribution du rôle Administrateur --}}
+<div id="admin-role-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="card2 max-w-md w-full p-6 text-[#f3e7cc] space-y-4 shadow-2xl border border-purple-800">
+        <div class="flex items-center gap-3 border-b border-[#4a2c17] pb-3">
+            <span class="text-3xl">🛡️</span>
+            <div>
+                <h3 class="font-cinzel text-xl font-bold text-purple-300">Privilège Administrateur</h3>
+                <p class="text-xs text-gray-400">Création d'un compte de Niveau 4</p>
+            </div>
+        </div>
+        <p class="font-garamond text-base leading-snug">
+            Vous vous préparez à créer un nouveau compte avec le rôle <b class="text-purple-300">Administrateur</b>.
+        </p>
+        <div class="rounded border border-purple-900/60 bg-purple-950/40 p-3 text-xs text-purple-200 space-y-1.5 font-garamond">
+            <p class="font-bold uppercase tracking-wider text-purple-400">⚠️ Avertissement de sécurité :</p>
+            <ul class="list-disc pl-4 space-y-1">
+                <li>Cet utilisateur obtiendra un <b>accès total</b> à l'ensemble du système.</li>
+                <li>Il aura le pouvoir de modifier ou <b>supprimer d'autres administrateurs</b>.</li>
+                <li>Il aura accès aux données confidentielles de la bibliothèque.</li>
+            </ul>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+            <button type="button" id="cancel-admin-modal-btn" class="px-4 py-1.5 text-sm underline text-gray-400 hover:text-white">Annuler</button>
+            <button type="button" id="confirm-admin-modal-btn" class="plate px-5 py-1.5 text-sm font-bold bg-purple-800 text-purple-100 border-purple-900">Confirmer la création</button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function() {
+    const form = document.querySelector('form[action*="admin/users"]');
+    const select = document.getElementById('type_id');
+    const modal = document.getElementById('admin-role-modal');
+    const cancelBtn = document.getElementById('cancel-admin-modal-btn');
+    const confirmBtn = document.getElementById('confirm-admin-modal-btn');
+    
+    if (!form || !select || !modal) return;
+    let confirmed = false;
+
+    form.addEventListener('submit', function(e) {
+        if (select.value == '4' && !confirmed) {
+            e.preventDefault();
+            modal.classList.remove('hidden');
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+
+    confirmBtn.addEventListener('click', function() {
+        confirmed = true;
+        modal.classList.add('hidden');
+        form.submit();
+    });
+})();
+</script>
+@endpush
 @endsection

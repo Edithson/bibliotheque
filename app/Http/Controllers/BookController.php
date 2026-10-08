@@ -62,12 +62,21 @@ class BookController extends Controller
      */
     public function adminIndex(Request $request): View
     {
+        $user = Auth::user();
+        $isAuthorOnly = $user && ! $user->isGerant();
+
         $search = $request->query('search');
         $categoryId = $request->query('category_id');
         $status = $request->query('status');
         $creatorId = $request->query('user_id');
 
         $query = Book::with(['category', 'creator', 'updater'])->orderBy('id', 'desc');
+
+        if ($isAuthorOnly) {
+            $query->where('user_id', $user->id);
+        } elseif (! empty($creatorId)) {
+            $query->where('user_id', $creatorId);
+        }
 
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -88,18 +97,19 @@ class BookController extends Controller
             $query->where('is_published', false);
         }
 
-        if (! empty($creatorId)) {
-            $query->where('user_id', $creatorId);
-        }
-
         $books = $query->paginate(10)->withQueryString();
         $categories = Category::all();
-        $creators = User::whereHas('createdBooks')->orWhere('type_id', '>', 1)->get();
+        $creators = $isAuthorOnly ? collect() : User::whereHas('createdBooks')->orWhere('type_id', '>', 1)->get();
 
-        $totalBooks = Book::count();
-        $freeBooks = Book::where('price', 0)->count();
-        $paidBooks = Book::where('price', '>', 0)->count();
-        $publishedBooks = Book::where('is_published', true)->count();
+        $baseCountQuery = Book::query();
+        if ($isAuthorOnly) {
+            $baseCountQuery->where('user_id', $user->id);
+        }
+
+        $totalBooks = (clone $baseCountQuery)->count();
+        $freeBooks = (clone $baseCountQuery)->where('price', 0)->count();
+        $paidBooks = (clone $baseCountQuery)->where('price', '>', 0)->count();
+        $publishedBooks = (clone $baseCountQuery)->where('is_published', true)->count();
 
         return view('admin.pages.books.index', [
             'books' => $books,
@@ -123,6 +133,11 @@ class BookController extends Controller
      */
     public function show(Book $book): View
     {
+        $user = Auth::user();
+        if ($user && ! $user->isGerant() && $book->user_id !== $user->id) {
+            abort(403, 'Accès non autorisé à cet ouvrage.');
+        }
+
         $book->load(['category', 'creator', 'updater']);
 
         $downloads = $book->downloads()
@@ -184,7 +199,7 @@ class BookController extends Controller
         }
 
         // Si l'utilisateur est un simple auteur (niveau < 3), la publication reste en attente de validation
-        if ($user && ! $user->hasRoleLevel(3)) {
+        if ($user && ! $user->isGerant()) {
             $validated['is_published'] = false;
         } else {
             $validated['is_published'] = $request->boolean('is_published', true);
@@ -199,7 +214,7 @@ class BookController extends Controller
             ProcessBookFileUploadJob::dispatchSync($book, $tempPath);
         }
 
-        $message = ($user && ! $user->hasRoleLevel(3))
+        $message = ($user && ! $user->isGerant())
             ? "L'ouvrage « {$book->title} » a été soumis et est en attente de validation par un gérant."
             : "L'ouvrage « {$book->title} » a été créé avec succès.";
 
@@ -219,6 +234,16 @@ class BookController extends Controller
      */
     public function edit(Book $book): View
     {
+        $user = Auth::user();
+        if ($user && ! $user->isGerant()) {
+            if ($book->user_id !== $user->id) {
+                abort(403, 'Accès non autorisé à cet ouvrage.');
+            }
+            if ($book->is_published) {
+                abort(403, 'Vous ne pouvez pas modifier un ouvrage déjà publié.');
+            }
+        }
+
         $categories = Category::all();
 
         return view('admin.pages.books.edit', compact('book', 'categories'));
@@ -229,18 +254,27 @@ class BookController extends Controller
      */
     public function update(UpdateBookRequest $request, Book $book): JsonResponse|RedirectResponse
     {
+        $user = Auth::user();
+        if ($user && ! $user->isGerant()) {
+            if ($book->user_id !== $user->id) {
+                abort(403, 'Accès non autorisé à cet ouvrage.');
+            }
+            if ($book->is_published) {
+                abort(403, 'Vous ne pouvez pas modifier un ouvrage déjà publié.');
+            }
+        }
+
         $validated = $request->validated();
 
         if ($book->title !== $validated['title']) {
             $validated['slug'] = $this->generateUniqueSlug($validated['title'], $book->id);
         }
 
-        $user = Auth::user();
         if ($user) {
             $validated['updated_by_user_id'] = $user->id;
         }
 
-        if ($user && ! $user->hasRoleLevel(3)) {
+        if ($user && ! $user->isGerant()) {
             // Auteur ne peut pas auto-valider s'il modifie
             $validated['is_published'] = false;
         } else {
@@ -272,6 +306,16 @@ class BookController extends Controller
      */
     public function destroy(Request $request, Book $book): JsonResponse|RedirectResponse
     {
+        $user = Auth::user();
+        if ($user && ! $user->isGerant()) {
+            if ($book->user_id !== $user->id) {
+                abort(403, 'Accès non autorisé à cet ouvrage.');
+            }
+            if ($book->is_published) {
+                abort(403, 'Vous ne pouvez pas supprimer un ouvrage déjà publié.');
+            }
+        }
+
         if ($book->file_path && Storage::disk('local')->exists($book->file_path)) {
             Storage::disk('local')->delete($book->file_path);
         }
@@ -308,8 +352,8 @@ class BookController extends Controller
      */
     public function download(Request $request, Book $book): RedirectResponse|StreamedResponse|BinaryFileResponse
     {
-        if ($book->price !== 0 && ! auth()->check()) {
-            return redirect()->route('login')->with('info', 'Veuillez vous connecter pour télécharger cet ouvrage.');
+        if (! auth()->check()) {
+            return redirect()->guest(route('login'))->with('info', 'Veuillez vous connecter pour télécharger cet ouvrage.');
         }
 
         Download::create([

@@ -29,12 +29,12 @@
                         @endif
                     </p>
                     <div class="mt-4 flex flex-wrap items-center gap-4">
-                        @if ($book->price === 0 || auth()->check())
+                        @if (auth()->check())
                             <a href="{{ route('books.download', $book->slug) }}" class="plate px-6 py-2.5 text-xl font-bold border-green-800 text-green-950" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">
                                 📥 Télécharger (PDF)
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="plate px-6 py-2.5 text-xl font-bold border-amber-800 text-amber-950" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">
+                            <a href="{{ route('books.download', $book->slug) }}" class="plate px-6 py-2.5 text-xl font-bold border-amber-800 text-amber-950" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">
                                 🔐 Se connecter pour télécharger
                             </a>
                         @endif

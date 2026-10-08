@@ -61,6 +61,10 @@ Route::middleware(['auth', 'role:author'])->prefix('admin')->name('admin.')->gro
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
 
+    // Downloads management accessible to Authors (level 2+), Gérants (level 3+), and Admin (level 4)
+    Route::get('/downloads', [DownloadController::class, 'index'])->name('downloads.index');
+    Route::get('/downloads/export', [DownloadController::class, 'export'])->name('downloads.export');
+
     // Gérant Level (3 and above): Book validation toggle & Categories management
     Route::middleware('role:gerant')->group(function () {
         Route::patch('/books/{book}/toggle-publish', [BookController::class, 'togglePublish'])->name('books.toggle-publish');
@@ -69,17 +73,14 @@ Route::middleware(['auth', 'role:author'])->prefix('admin')->name('admin.')->gro
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
 
+    // Admin Level (4): User Account & Role Management, Contact Messages
+    Route::middleware('role:admin')->group(function () {
         Route::get('/contacts', [ContactController::class, 'index'])->name('contacts.index');
         Route::get('/contacts/{contact}', [ContactController::class, 'show'])->name('contacts.show');
         Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])->name('contacts.destroy');
 
-        Route::get('/downloads', [DownloadController::class, 'index'])->name('downloads.index');
-        Route::get('/downloads/export', [DownloadController::class, 'export'])->name('downloads.export');
-    });
-
-    // Admin Level (4): User Account & Role Management (CRUD)
-    Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

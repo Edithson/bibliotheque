@@ -222,20 +222,19 @@ function openBook(i, el) {
     if (b.p === 0) {
         $('#bp').textContent = 'GRATUIT';
         $('#cur-unit').style.display = 'none';
+    } else {
+        $('#bp').textContent = b.p.toLocaleString('fr-FR');
+        $('#cur-unit').style.display = 'inline';
+    }
+
+    if (IS_LOGGED_IN) {
         dlBtn.href = b.download_url;
         dlBtn.classList.remove('hidden');
         dlBtn.classList.add('inline-block');
     } else {
-        $('#bp').textContent = b.p.toLocaleString('fr-FR');
-        $('#cur-unit').style.display = 'inline';
-        if (IS_LOGGED_IN) {
-            dlBtn.href = b.download_url;
-            dlBtn.classList.remove('hidden');
-            dlBtn.classList.add('inline-block');
-        } else {
-            loginDlBtn.classList.remove('hidden');
-            loginDlBtn.classList.add('inline-block');
-        }
+        loginDlBtn.href = b.download_url;
+        loginDlBtn.classList.remove('hidden');
+        loginDlBtn.classList.add('inline-block');
     }
 
     $('#m').classList.replace('hidden', 'flex');

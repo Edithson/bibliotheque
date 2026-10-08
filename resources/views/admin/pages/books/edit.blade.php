@@ -65,6 +65,7 @@
 
         @if (auth()->user()->isGerant())
             <div class="flex items-center pt-6">
+                <input type="hidden" name="is_published" value="0">
                 <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" name="is_published" value="1" {{ old('is_published', $book->is_published) ? 'checked' : '' }} class="h-5 w-5 rounded accent-[#b98a2e]">
                     <span class="text-base text-[#e9c96b]">Publier cet ouvrage sur le site web</span>

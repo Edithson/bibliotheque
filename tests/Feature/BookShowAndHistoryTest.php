@@ -63,6 +63,7 @@ test('downloading a book creates a download record visible in history', function
         'title' => 'Livre Gratuit Téléchargeable',
         'slug' => 'livre-gratuit-telechargeable',
         'author' => 'Auteur Gratuit',
+        'user_id' => $authorUser->id,
         'category_id' => $category->id,
         'price' => 0,
         'is_published' => true,

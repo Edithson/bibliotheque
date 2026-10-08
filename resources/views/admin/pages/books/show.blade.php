@@ -13,9 +13,11 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-        <a href="{{ route('admin.books.edit', $book->id) }}" class="plate px-4 py-1.5 text-sm font-semibold hover:no-underline">
-            ✍️ Modifier l'ouvrage
-        </a>
+        @if (auth()->user()->isGerant() || ! $book->is_published)
+            <a href="{{ route('admin.books.edit', $book->id) }}" class="plate px-4 py-1.5 text-sm font-semibold hover:no-underline">
+                ✍️ Modifier l'ouvrage
+            </a>
+        @endif
         <a href="{{ route('books.download', $book->slug) }}" class="plate px-4 py-1.5 text-sm font-semibold text-green-300 hover:no-underline" target="_blank">
             📥 Télécharger PDF
         </a>

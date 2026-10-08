@@ -26,11 +26,19 @@
                 📚 Registre des Livres
             </a>
 
+            @if (auth()->user()->isAuthor())
+                <a href="{{ route('admin.downloads.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.downloads.*') ? '!brightness-125' : 'opacity-80' }}">
+                    📊 Téléchargements
+                </a>
+            @endif
+
             @if (auth()->user()->isGerant())
                 <a href="{{ route('admin.categories.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.categories.*') ? '!brightness-125' : 'opacity-80' }}">
                     🏷️ Catégories
                 </a>
+            @endif
 
+            @if (auth()->user()->isAdmin())
                 @php
                     $unreadCountBadge = \App\Models\Contact::where('is_read', false)->count();
                 @endphp
@@ -43,12 +51,6 @@
                     @endif
                 </a>
 
-                <a href="{{ route('admin.downloads.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.downloads.*') ? '!brightness-125' : 'opacity-80' }}">
-                    📊 Téléchargements
-                </a>
-            @endif
-
-            @if (auth()->user()->isAdmin())
                 <a href="{{ route('admin.users.index') }}" class="plate px-4 py-1.5 text-base hover:no-underline {{ request()->routeIs('admin.users.*') ? '!brightness-125' : 'opacity-80' }}">
                     👥 Comptes & Rôles
                 </a>

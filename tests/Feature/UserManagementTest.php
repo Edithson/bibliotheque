@@ -64,14 +64,46 @@ test('admin can update user details and role', function () {
     expect($targetUser->type_id)->toBe(2);
 });
 
-test('admin can delete another user account', function () {
+test('admin can soft delete another user account', function () {
     $admin = User::factory()->admin()->create();
     $targetUser = User::factory()->guest()->create();
 
     $response = $this->actingAs($admin)->delete("/admin/users/{$targetUser->id}");
 
     $response->assertRedirect('/admin/users');
-    $this->assertDatabaseMissing('users', ['id' => $targetUser->id]);
+    $this->assertSoftDeleted('users', ['id' => $targetUser->id]);
+});
+
+test('admin can soft delete another admin user account', function () {
+    $admin1 = User::factory()->admin()->create();
+    $admin2 = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin1)->delete("/admin/users/{$admin2->id}");
+
+    $response->assertRedirect('/admin/users');
+    $this->assertSoftDeleted('users', ['id' => $admin2->id]);
+});
+
+test('admin cannot demote their own role level', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Attempt via update
+    $response = $this->actingAs($admin)->put("/admin/users/{$admin->id}", [
+        'name' => $admin->name,
+        'email' => $admin->email,
+        'type_id' => 1, // Demote to Guest
+    ]);
+
+    $response->assertSessionHas('error');
+    expect($admin->fresh()->type_id)->toBe(4);
+
+    // Attempt via updateRole
+    $response = $this->actingAs($admin)->patch("/admin/users/{$admin->id}/role", [
+        'type_id' => 2, // Demote to Author
+    ]);
+
+    $response->assertSessionHas('error');
+    expect($admin->fresh()->type_id)->toBe(4);
 });
 
 test('admin cannot delete their own account', function () {
@@ -81,7 +113,7 @@ test('admin cannot delete their own account', function () {
 
     $response->assertRedirect('/admin/users');
     $response->assertSessionHas('error');
-    $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    $this->assertDatabaseHas('users', ['id' => $admin->id, 'deleted_at' => null]);
 });
 
 test('non-admin user cannot access user management endpoints', function () {

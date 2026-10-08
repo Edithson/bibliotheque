@@ -81,17 +81,21 @@
                         </span>
                     </td>
                     <td>
-                        <form action="{{ route('admin.users.update-role', $u->id) }}" method="POST" class="flex items-center gap-2">
-                            @csrf
-                            @method('PATCH')
-                            <select name="type_id" class="admin-field-select !py-1 !text-sm">
-                                <option value="1" {{ $u->type_id == 1 ? 'selected' : '' }}>Guest (Visiteur)</option>
-                                <option value="2" {{ $u->type_id == 2 ? 'selected' : '' }}>Auteur</option>
-                                <option value="3" {{ $u->type_id == 3 ? 'selected' : '' }}>Gérant</option>
-                                <option value="4" {{ $u->type_id == 4 ? 'selected' : '' }}>Administrateur</option>
-                            </select>
-                            <button type="submit" class="plate px-3 py-1 text-xs whitespace-nowrap">Mettre à jour</button>
-                        </form>
+                        @if ($u->id === auth()->id())
+                            <span class="text-xs italic text-[#e9c96b]/80 font-mono">🔒 Rôle principal non modifiable</span>
+                        @else
+                            <form action="{{ route('admin.users.update-role', $u->id) }}" method="POST" class="role-form flex items-center gap-2" data-user-name="{{ $u->name }}" data-[#user-id]="{{ $u->id }}" data-current-type="{{ $u->type_id }}">
+                                @csrf
+                                @method('PATCH')
+                                <select name="type_id" class="role-select admin-field-select !py-1 !text-sm">
+                                    <option value="1" {{ $u->type_id == 1 ? 'selected' : '' }}>Guest (Visiteur)</option>
+                                    <option value="2" {{ $u->type_id == 2 ? 'selected' : '' }}>Auteur</option>
+                                    <option value="3" {{ $u->type_id == 3 ? 'selected' : '' }}>Gérant</option>
+                                    <option value="4" {{ $u->type_id == 4 ? 'selected' : '' }}>Administrateur</option>
+                                </select>
+                                <button type="submit" class="plate px-3 py-1 text-xs whitespace-nowrap">Mettre à jour</button>
+                            </form>
+                        @endif
                     </td>
                     <td class="font-mono text-xs text-gray-600">{{ $u->created_at->format('d/m/Y H:i') }}</td>
                     <td class="whitespace-nowrap">
@@ -105,10 +109,10 @@
 
                             {{-- Icone Suppression --}}
                             @if ($u->id !== auth()->id())
-                                <form action="{{ route('admin.users.destroy', $u->id) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer définitivement le compte de {{ $u->name }} ?')">
+                                <form action="{{ route('admin.users.destroy', $u->id) }}" method="POST" class="inline" onsubmit="return confirm('Archiver (Soft-Delete) le compte de {{ $u->name }} ? Suspendra l\'accès utilisateur tout en conservant l\'historique.')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center justify-center p-1.5 text-[#e05a3f] hover:text-red-400 hover:bg-[#3b2514] rounded transition border-0 bg-transparent cursor-pointer" title="Supprimer l'utilisateur">
+                                    <button type="submit" class="inline-flex items-center justify-center p-1.5 text-[#e05a3f] hover:text-red-400 hover:bg-[#3b2514] rounded transition border-0 bg-transparent cursor-pointer" title="Archiver / Supprimer le compte">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -132,4 +136,73 @@
 <div class="mt-6 flex justify-center">
     {{ $users->links() }}
 </div>
+
+{{-- Modale de confirmation pour la promotion Administrateur --}}
+<div id="admin-role-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="card2 max-w-md w-full p-6 text-[#f3e7cc] space-y-4 shadow-2xl border border-purple-800">
+        <div class="flex items-center gap-3 border-b border-[#4a2c17] pb-3">
+            <span class="text-3xl">🛡️</span>
+            <div>
+                <h3 class="font-cinzel text-xl font-bold text-purple-300">Privilège Administrateur</h3>
+                <p class="text-xs text-gray-400">Attribution de droits d'accès de Niveau 4</p>
+            </div>
+        </div>
+        <p class="font-garamond text-base leading-snug">
+            Vous vous préparez à accorder le rôle <b class="text-purple-300">Administrateur</b> à <b id="admin-modal-target-name" class="text-[#e9c96b]"></b>.
+        </p>
+        <div class="rounded border border-purple-900/60 bg-purple-950/40 p-3 text-xs text-purple-200 space-y-1.5 font-garamond">
+            <p class="font-bold uppercase tracking-wider text-purple-400">⚠️ Avertissement de sécurité :</p>
+            <ul class="list-disc pl-4 space-y-1">
+                <li>Cet utilisateur obtiendra un <b>accès total</b> à l'ensemble du système.</li>
+                <li>Il aura le pouvoir de modifier ou <b>supprimer d'autres administrateurs</b>.</li>
+                <li>Il aura accès aux données confidentielles de la bibliothèque.</li>
+            </ul>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+            <button type="button" id="cancel-admin-modal-btn" class="px-4 py-1.5 text-sm underline text-gray-400 hover:text-white">Annuler</button>
+            <button type="button" id="confirm-admin-modal-btn" class="plate px-5 py-1.5 text-sm font-bold bg-purple-800 text-purple-100 border-purple-900">Confirmer la nomination</button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function() {
+    let pendingForm = null;
+    const modal = document.getElementById('admin-role-modal');
+    const targetNameEl = document.getElementById('admin-modal-target-name');
+    const cancelBtn = document.getElementById('cancel-admin-modal-btn');
+    const confirmBtn = document.getElementById('confirm-admin-modal-btn');
+
+    document.querySelectorAll('.role-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const select = form.querySelector('.role-select');
+            const currentType = form.dataset.currentType;
+            const userName = form.dataset.userName;
+
+            if (select.value == '4' && currentType != '4') {
+                e.preventDefault();
+                pendingForm = form;
+                targetNameEl.textContent = userName;
+                modal.classList.remove('hidden');
+            }
+        });
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        pendingForm = null;
+    });
+
+    confirmBtn.addEventListener('click', function() {
+        if (pendingForm) {
+            const formToSubmit = pendingForm;
+            modal.classList.add('hidden');
+            pendingForm = null;
+            formToSubmit.submit();
+        }
+    });
+})();
+</script>
+@endpush
 @endsection
