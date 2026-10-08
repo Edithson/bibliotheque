@@ -92,7 +92,7 @@ test('non-admin user can delete their account with password confirmation', funct
     $response->assertSessionHas('success');
 
     $this->assertGuest();
-    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->assertSoftDeleted('users', ['id' => $user->id]);
 });
 
 test('non-admin user cannot delete account with incorrect password', function () {

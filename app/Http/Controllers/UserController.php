@@ -100,6 +100,10 @@ class UserController extends Controller
             'type_id' => ['required', 'exists:types,id'],
         ]);
 
+        if ($user->id === auth()->id() && (int) $validated['type_id'] !== 4) {
+            return redirect()->back()->with('error', 'Vous ne pouvez pas rétrograder votre propre niveau d\'accès administrateur.');
+        }
+
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -130,6 +134,10 @@ class UserController extends Controller
         } else {
             $roleMap = ['guest' => 1, 'auteur' => 2, 'gerant' => 3, 'admin' => 4];
             $typeId = $roleMap[$validated['role'] ?? 'guest'] ?? 1;
+        }
+
+        if ($user->id === auth()->id() && $typeId !== 4) {
+            return redirect()->back()->with('error', 'Vous ne pouvez pas rétrograder votre propre niveau d\'accès administrateur.');
         }
 
         $user->update(['type_id' => $typeId]);

@@ -178,7 +178,7 @@
                                     </svg>
                                 </a>
                                 {{-- Icone Suppression --}}
-                                <form action="{{ route('admin.books.destroy', $b->id) }}" method="POST" class="inline" onsubmit="return confirm('Retirer « {{ $b->title }} » du catalogue ?')">
+                                <form action="{{ route('admin.books.destroy', $b->id) }}" method="POST" class="delete-book-form inline" data-book-title="{{ $b->title }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="inline-flex items-center justify-center p-1.5 text-[#e05a3f] hover:text-red-400 hover:bg-[#3b2514] rounded transition border-0 bg-transparent cursor-pointer" title="Supprimer l'ouvrage">
@@ -205,4 +205,67 @@
 <div class="mt-6 flex justify-center">
     {{ $books->links() }}
 </div>
+
+{{-- Modale de confirmation pour la suppression d'un ouvrage --}}
+<div id="delete-book-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="card2 max-w-md w-full p-6 text-[#f3e7cc] space-y-4 shadow-2xl border border-red-800">
+        <div class="flex items-center gap-3 border-b border-[#4a2c17] pb-3">
+            <span class="text-3xl">⚠️</span>
+            <div>
+                <h3 class="font-cinzel text-xl font-bold text-red-400">Confirmation de Suppression</h3>
+                <p class="text-xs text-gray-400">Suppression du fichier PDF & Archivage Registre</p>
+            </div>
+        </div>
+        <p class="font-garamond text-base leading-snug">
+            Vous êtes sur le point de supprimer l'ouvrage <b id="del-book-title-target" class="text-[#e9c96b]"></b>.
+        </p>
+        <div class="rounded border border-red-900/60 bg-red-950/40 p-3 text-xs text-red-200 space-y-1.5 font-garamond">
+            <p class="font-bold uppercase tracking-wider text-red-400">⚡ Conséquences :</p>
+            <ul class="list-disc pl-4 space-y-1">
+                <li><b>Fichier PDF :</b> Le fichier numérique sera <b>définitivement supprimé</b> des serveurs.</li>
+                <li><b>Catalogue :</b> L'ouvrage ne sera plus visible sur le site ni dans le registre.</li>
+                <li><b>Traçabilité :</b> La fiche sera archivée (Soft-Delete) en base de données.</li>
+            </ul>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+            <button type="button" id="cancel-del-book-btn" class="px-4 py-1.5 text-sm underline text-gray-400 hover:text-white">Annuler</button>
+            <button type="button" id="confirm-del-book-btn" class="plate px-5 py-1.5 text-sm font-bold bg-red-800 text-red-100 border-red-900">Confirmer la suppression</button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function() {
+    let pendingBookForm = null;
+    const modal = document.getElementById('delete-book-modal');
+    const targetTitleEl = document.getElementById('del-book-title-target');
+    const cancelBtn = document.getElementById('cancel-del-book-btn');
+    const confirmBtn = document.getElementById('confirm-del-book-btn');
+
+    document.querySelectorAll('.delete-book-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            pendingBookForm = form;
+            targetTitleEl.textContent = "« " + form.dataset.bookTitle + " »";
+            modal.classList.remove('hidden');
+        });
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+        pendingBookForm = null;
+    });
+
+    confirmBtn.addEventListener('click', function() {
+        if (pendingBookForm) {
+            const formToSubmit = pendingBookForm;
+            modal.classList.add('hidden');
+            pendingBookForm = null;
+            formToSubmit.submit();
+        }
+    });
+})();
+</script>
+@endpush
 @endsection

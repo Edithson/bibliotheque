@@ -136,3 +136,56 @@ test('can download a free e-book and logs the download entry', function () {
         'book_id' => $book->id,
     ]);
 });
+
+test('gerant can unpublish a book that is currently published', function () {
+    $gerant = User::factory()->gerant()->create();
+    $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
+    $book = Book::create([
+        'title' => 'Livre Déjà Publié',
+        'slug' => 'livre-deja-publie',
+        'author' => 'Auteur',
+        'category_id' => $category->id,
+        'price' => 1000,
+        'is_published' => true,
+    ]);
+
+    expect($book->is_published)->toBeTrue();
+
+    $response = $this->actingAs($gerant)->put("/admin/books/{$book->id}", [
+        'title' => 'Livre Déjà Publié',
+        'author' => 'Auteur',
+        'category_id' => $category->id,
+        'price' => 1000,
+        'is_published' => '0',
+    ]);
+
+    $response->assertRedirect('/admin');
+    expect($book->fresh()->is_published)->toBeFalse();
+});
+
+test('deleting a book deletes physical PDF file from storage and soft-deletes the record', function () {
+    Storage::fake('local');
+    $gerant = User::factory()->gerant()->create();
+    $category = Category::create(['name' => 'Roman', 'slug' => 'roman']);
+
+    $filePath = 'books/test.pdf';
+    Storage::disk('local')->put($filePath, 'pdf content');
+
+    $book = Book::create([
+        'title' => 'Livre Supprimé',
+        'slug' => 'livre-supprime',
+        'author' => 'Auteur',
+        'category_id' => $category->id,
+        'price' => 0,
+        'file_path' => $filePath,
+        'is_published' => true,
+    ]);
+
+    Storage::disk('local')->assertExists($filePath);
+
+    $response = $this->actingAs($gerant)->delete("/admin/books/{$book->id}");
+
+    $response->assertRedirect('/admin');
+    Storage::disk('local')->assertMissing($filePath);
+    $this->assertSoftDeleted('books', ['id' => $book->id]);
+});
