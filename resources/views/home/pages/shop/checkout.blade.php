@@ -35,27 +35,34 @@
             </div>
         </div>
 
-        {{-- Intégration officielle du Widget & Bouton Monetbil v2 --}}
+        {{-- Intégration officielle Monetbil v2.1 --}}
         <div class="space-y-4 text-center pt-2">
             <p class="font-garamond text-base italic text-[#e9c96b]/90">
                 Sélectionnez votre opérateur (Orange Money, MTN Mobile Money, Moov...) et validez le paiement sur votre téléphone portable.
             </p>
 
             <div class="flex justify-center py-2">
-                <form action="{{ $returnUrl }}" method="get" data-monetbil="form"
-                      data-service-key="{{ $serviceKey }}"
-                      data-amount="{{ $book->price }}"
-                      data-currency="XAF"
-                      data-item-ref="{{ $payment->payment_ref }}"
-                      data-description="{{ $book->title }}"
-                      data-notify-url="{{ $notifyUrl }}"
-                      data-user-id="{{ auth()->id() }}"
-                      data-email="{{ auth()->user()->email }}"
-                      data-country="CM">
-                    <button class="plate px-8 py-3.5 text-xl font-bold border-amber-800 text-amber-950 shadow-2xl cursor-pointer hover:brightness-110 transition" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)" type="submit">
+                @if (!empty($paymentUrl))
+                    <a href="{{ $paymentUrl }}" class="plate px-8 py-3.5 text-xl font-bold border-amber-800 text-amber-950 shadow-2xl cursor-pointer hover:brightness-110 transition inline-block text-center" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">
                         💳 Pay by Mobile Money ({{ number_format($book->price, 0, ',', ' ') }} FCFA)
-                    </button>
-                </form>
+                    </a>
+                @else
+                    <form action="https://api.monetbil.com/widget/v2.1/{{ $serviceKey }}" method="POST" data-monetbil="form">
+                        <input type="hidden" name="amount" value="{{ $book->price }}">
+                        <input type="hidden" name="currency" value="XAF">
+                        <input type="hidden" name="item_ref" value="{{ $payment->payment_ref }}">
+                        <input type="hidden" name="payment_ref" value="{{ $payment->payment_ref }}">
+                        <input type="hidden" name="description" value="{{ $book->title }}">
+                        <input type="hidden" name="notify_url" value="{{ $notifyUrl }}">
+                        <input type="hidden" name="return_url" value="{{ $returnUrl }}">
+                        <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                        <input type="hidden" name="email" value="{{ auth()->user()->email }}">
+                        <input type="hidden" name="country" value="CM">
+                        <button class="plate px-8 py-3.5 text-xl font-bold border-amber-800 text-amber-950 shadow-2xl cursor-pointer hover:brightness-110 transition" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)" type="submit">
+                            💳 Pay by Mobile Money ({{ number_format($book->price, 0, ',', ' ') }} FCFA)
+                        </button>
+                    </form>
+                @endif
             </div>
 
             <div class="flex flex-wrap justify-center items-center gap-3 pt-2 text-xs text-[#e9c96b]/60 font-mono">
