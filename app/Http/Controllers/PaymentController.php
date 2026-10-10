@@ -8,6 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -51,12 +53,34 @@ class PaymentController extends Controller
         $notifyUrl = route('payments.notify');
         $returnUrl = route('payments.return', ['payment_ref' => $payment->payment_ref]);
 
+        $paymentUrl = null;
+        try {
+            $response = Http::asForm()->timeout(5)->post("https://api.monetbil.com/widget/v2.1/{$serviceKey}", [
+                'amount' => $book->price,
+                'currency' => 'XAF',
+                'item_ref' => $payment->payment_ref,
+                'payment_ref' => $payment->payment_ref,
+                'notify_url' => $notifyUrl,
+                'return_url' => $returnUrl,
+                'email' => $user->email,
+                'country' => 'CM',
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $paymentUrl = $data['payment_url'] ?? $data['link'] ?? null;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Monetbil API call notice: '.$e->getMessage());
+        }
+
         return view('home.pages.shop.checkout', [
             'book' => $book,
             'payment' => $payment,
             'serviceKey' => $serviceKey,
             'notifyUrl' => $notifyUrl,
             'returnUrl' => $returnUrl,
+            'paymentUrl' => $paymentUrl,
         ]);
     }
 
@@ -65,10 +89,11 @@ class PaymentController extends Controller
      */
     public function notify(Request $request): JsonResponse
     {
+        Log::info('Monetbil IPN Notification received:', $request->all());
+
         $status = strtoupper($request->input('status', ''));
         $transactionId = $request->input('transaction_id') ?? $request->input('payment_id');
         $paymentRef = $request->input('item_ref') ?? $request->input('payment_ref');
-        $amount = $request->input('amount');
         $phone = $request->input('phone');
         $operator = $request->input('operator');
 
@@ -90,6 +115,10 @@ class PaymentController extends Controller
                 'operator' => $operator ?? $payment->operator,
                 'payment_details' => $request->all(),
             ]);
+
+            Log::info("Payment {$payment->payment_ref} status updated to: ".($isSuccess ? 'success' : 'failed'));
+        } else {
+            Log::warning('Monetbil IPN: payment record not found for ref/txn: '.$paymentRef.' / '.$transactionId);
         }
 
         return response()->json([
@@ -103,14 +132,24 @@ class PaymentController extends Controller
      */
     public function return(Request $request): RedirectResponse
     {
-        $paymentRef = $request->query('payment_ref');
-        $user = Auth::user();
+        Log::info('Monetbil Customer Return:', $request->all());
+
+        $paymentRef = $request->query('payment_ref') ?? $request->query('item_ref');
+        $status = strtoupper($request->query('status', ''));
+        $transactionId = $request->query('transaction_id');
 
         if ($paymentRef) {
             $payment = Payment::where('payment_ref', $paymentRef)->first();
-            if ($payment && $payment->status === 'pending') {
-                // Si la notification IPN tardait, marquer comme valide lors du retour client vérifié
-                $payment->update(['status' => 'success']);
+            if ($payment) {
+                if ($status === 'SUCCESS' || $status === 'COMPLETED' || $request->query('code') == '1') {
+                    $payment->update([
+                        'status' => 'success',
+                        'transaction_id' => $transactionId ?? $payment->transaction_id,
+                    ]);
+                } elseif ($payment->status === 'pending' && (! $status || $status === 'SUCCESS')) {
+                    // Si le retour client contient un statut de succès sans erreur
+                    $payment->update(['status' => 'success']);
+                }
             }
         }
 
