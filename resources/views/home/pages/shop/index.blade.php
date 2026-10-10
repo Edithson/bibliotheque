@@ -52,6 +52,14 @@
                     <p class="font-cinzel text-3xl text-[#2a190e]"><span id="bp"></span> <small id="cur-unit" class="text-sm">FCFA</small></p>
                     <div class="mt-3 flex flex-wrap items-center gap-4">
                         <a id="dl-btn" href="#" class="plate hidden px-5 py-2 text-xl border-green-800 text-green-950 font-bold" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">Télécharger (PDF)</a>
+                        
+                        <form id="buy-form" method="POST" action="" data-monetbil="form" class="hidden">
+                            @csrf
+                            <button id="buy-btn" class="plate px-5 py-2 text-xl border-amber-800 text-amber-950 font-bold shadow-lg" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)" type="submit">
+                                Pay by Mobile Money
+                            </button>
+                        </form>
+
                         <a id="login-dl-btn" href="{{ route('login') }}" class="plate hidden px-5 py-2 text-xl border-amber-800 text-amber-950 font-bold" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">Se connecter pour télécharger</a>
 
                         <button id="x" class="font-garamond text-lg italic underline">Reposer le livre</button>
@@ -82,6 +90,9 @@
 const B = @json($books);
 const DB_CATS = @json($categories->pluck('name'));
 const IS_LOGGED_IN = @json(auth()->check());
+const IS_GERANT = @json(auth()->check() && auth()->user()->isGerant());
+const USER_ID = @json(auth()->id());
+const PURCHASED_BOOK_IDS = @json(auth()->check() ? auth()->user()->payments()->where('status', 'success')->pluck('book_id') : []);
 
 const $ = s => document.querySelector(s);
 const nz = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -213,11 +224,14 @@ function openBook(i, el) {
 
     const dlBtn = $('#dl-btn');
     const loginDlBtn = $('#login-dl-btn');
+    const buyForm = $('#buy-form');
 
     dlBtn.classList.add('hidden');
     dlBtn.classList.remove('inline-block');
     loginDlBtn.classList.add('hidden');
     loginDlBtn.classList.remove('inline-block');
+    buyForm.classList.add('hidden');
+    buyForm.classList.remove('inline-block');
 
     if (b.p === 0) {
         $('#bp').textContent = 'GRATUIT';
@@ -227,14 +241,30 @@ function openBook(i, el) {
         $('#cur-unit').style.display = 'inline';
     }
 
-    if (IS_LOGGED_IN) {
-        dlBtn.href = b.download_url;
-        dlBtn.classList.remove('hidden');
-        dlBtn.classList.add('inline-block');
+    const hasAccess = (b.p === 0) || IS_GERANT || PURCHASED_BOOK_IDS.includes(b.id) || (USER_ID && b.user_id === USER_ID);
+
+    if (hasAccess) {
+        if (IS_LOGGED_IN) {
+            dlBtn.href = b.download_url;
+            dlBtn.classList.remove('hidden');
+            dlBtn.classList.add('inline-block');
+        } else {
+            loginDlBtn.href = b.download_url;
+            loginDlBtn.textContent = '🔐 Se connecter pour télécharger';
+            loginDlBtn.classList.remove('hidden');
+            loginDlBtn.classList.add('inline-block');
+        }
     } else {
-        loginDlBtn.href = b.download_url;
-        loginDlBtn.classList.remove('hidden');
-        loginDlBtn.classList.add('inline-block');
+        if (IS_LOGGED_IN) {
+            buyForm.action = '/books/' + b.slug + '/checkout';
+            buyForm.classList.remove('hidden');
+            buyForm.classList.add('inline-block');
+        } else {
+            loginDlBtn.href = '/books/' + b.slug + '/checkout';
+            loginDlBtn.textContent = '🔐 Se connecter pour acheter (' + b.p.toLocaleString('fr-FR') + ' FCFA)';
+            loginDlBtn.classList.remove('hidden');
+            loginDlBtn.classList.add('inline-block');
+        }
     }
 
     $('#m').classList.replace('hidden', 'flex');

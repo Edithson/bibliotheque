@@ -29,13 +29,20 @@
                         @endif
                     </p>
                     <div class="mt-4 flex flex-wrap items-center gap-4">
-                        @if (auth()->check())
+                        @if ($book->price === 0 || (auth()->check() && (auth()->user()->hasPurchased($book) || auth()->user()->isGerant() || $book->user_id === auth()->id())))
                             <a href="{{ route('books.download', $book->slug) }}" class="plate px-6 py-2.5 text-xl font-bold border-green-800 text-green-950" style="background: linear-gradient(135deg,#68d391,#38a169 50%,#276749)">
                                 📥 Télécharger (PDF)
                             </a>
+                        @elseif (auth()->check())
+                            <form action="{{ route('payments.checkout', $book->slug) }}" method="POST" data-monetbil="form" class="inline">
+                                @csrf
+                                <button class="plate px-6 py-2.5 text-xl font-bold border-amber-800 text-amber-950 shadow-lg cursor-pointer hover:brightness-110 transition" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)" type="submit">
+                                    💳 Pay by Mobile Money ({{ number_format($book->price, 0, ',', ' ') }} FCFA)
+                                </button>
+                            </form>
                         @else
-                            <a href="{{ route('books.download', $book->slug) }}" class="plate px-6 py-2.5 text-xl font-bold border-amber-800 text-amber-950" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">
-                                🔐 Se connecter pour télécharger
+                            <a href="{{ route('payments.checkout', $book->slug) }}" class="plate px-6 py-2.5 text-xl font-bold border-amber-800 text-amber-950" style="background: linear-gradient(135deg,#fbd38d,#ed8936 50%,#c05621)">
+                                🔐 Se connecter pour acheter ({{ number_format($book->price, 0, ',', ' ') }} FCFA)
                             </a>
                         @endif
                     </div>
