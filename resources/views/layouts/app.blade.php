@@ -45,8 +45,8 @@
                 </a>
             </div>
 
-            <div class="text-[#e9c96b]/50 italic">
-                Développé avec passion pour la littérature &bull; La Bibliothèque des Mots
+            <div class="text-[#e9c96b]/60 italic">
+                Développé par <a href="{{ config('services.developer.url', 'https://moafogaus.abrdns.com/') }}" target="_blank" rel="noopener noreferrer" class="underline text-[#e9c96b] hover:text-white font-semibold transition">{{ config('services.developer.name', 'FONHOUO GAUS') }}</a> &bull; La Bibliothèque des Mots
             </div>
 
             <div>

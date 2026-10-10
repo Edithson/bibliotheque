@@ -26,8 +26,9 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('contact.send') }}" class="space-y-5 font-garamond text-base">
+        <form id="contact-form" method="POST" action="{{ route('contact.send') }}" class="space-y-5 font-garamond text-base">
             @csrf
+            <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
 
             <div>
                 <label for="name" class="block font-semibold text-[#e9c96b] mb-1">Votre Nom & Prénom *</label>
@@ -53,6 +54,14 @@
                 <textarea id="message" name="message" rows="6" required class="admin-field-textarea" placeholder="Rédigez votre message ici...">{{ old('message', $prefilledMessage) }}</textarea>
             </div>
 
+            @if (config('services.recaptcha.site_key'))
+                <p class="text-[11px] text-[#e9c96b]/60 italic">
+                    Ce formulaire est protégé par reCAPTCHA et Google. 
+                    <a href="https://policies.google.com/privacy" target="_blank" class="underline">Confidentialité</a> &bull; 
+                    <a href="https://policies.google.com/terms" target="_blank" class="underline">Conditions d'utilisation</a>
+                </p>
+            @endif
+
             <div class="pt-2">
                 <button type="submit" class="plate w-full py-2.5 text-xl">Envoyer la correspondance</button>
             </div>
@@ -64,3 +73,28 @@
     </div>
 </main>
 @endsection
+
+@push('scripts')
+@if (config('services.recaptcha.site_key'))
+    <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('contact-form');
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                const tokenInput = document.getElementById('g-recaptcha-response');
+                if (typeof grecaptcha !== 'undefined' && tokenInput && !tokenInput.value) {
+                    e.preventDefault();
+                    grecaptcha.ready(function () {
+                        grecaptcha.execute('{{ config("services.recaptcha.site_key") }}', { action: 'contact_form' }).then(function (token) {
+                            tokenInput.value = token;
+                            form.submit();
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+@endif
+@endpush

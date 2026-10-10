@@ -67,3 +67,22 @@ test('my-books page displays acquired books for logged in user', function () {
     $response->assertStatus(200);
     $response->assertSee('Livre dans ma bibliothèque');
 });
+
+test('footer displays developer name and links to developer website from config', function () {
+    config([
+        'services.developer.name' => 'FONHOUO GAUS',
+        'services.developer.url' => 'https://moafogaus.abrdns.com/',
+    ]);
+
+    $response = $this->get('/');
+    $response->assertStatus(200);
+    $response->assertSee('FONHOUO GAUS');
+    $response->assertSee('https://moafogaus.abrdns.com/');
+});
+
+test('recaptcha and developer service configuration map environment variables correctly', function () {
+    expect(config('services.recaptcha.site_key'))->not->toBeEmpty();
+    expect(config('services.recaptcha.secret_key'))->not->toBeEmpty();
+    expect(config('services.developer.name'))->toBe('FONHOUO GAUS');
+    expect(config('services.developer.url'))->toBe('https://moafogaus.abrdns.com/');
+});
