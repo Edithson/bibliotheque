@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Download;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -47,6 +48,38 @@ class PageController extends Controller
             'subject' => ['required', 'string'],
             'message' => ['required', 'string', 'min:10'],
         ]);
+
+        $secretKey = config('services.recaptcha.secret_key');
+        if (! empty($secretKey) && ! app()->environment('testing')) {
+            $recaptchaToken = $request->input('g-recaptcha-response');
+
+            if (empty($recaptchaToken)) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['recaptcha' => 'La vérification anti-robot reCAPTCHA est requise. Veuillez réessayer.']);
+            }
+
+            try {
+                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => $secretKey,
+                    'response' => $recaptchaToken,
+                    'remoteip' => $request->ip(),
+                ]);
+
+                $data = $response->json();
+                if (! ($data['success'] ?? false) || (($data['score'] ?? 1.0) < 0.3)) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->withErrors(['recaptcha' => 'La vérification anti-spam Google reCAPTCHA a échoué. Veuillez réessayer.']);
+                }
+            } catch (\Throwable $e) {
+                if (app()->environment('production')) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->withErrors(['recaptcha' => 'Impossible de contacter le service de vérification reCAPTCHA.']);
+                }
+            }
+        }
 
         $contact = Contact::create($validated);
 

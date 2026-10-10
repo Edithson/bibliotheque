@@ -41,4 +41,14 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/auth/google/callback'),
     ],
 
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_PUBLIC_KEY', env('RECAPTCHA_SITE_KEY')),
+        'secret_key' => env('RECAPTCHA_PRIVATE_KEY', env('RECAPTCHA_SECRET_KEY')),
+    ],
+
+    'developer' => [
+        'name' => env('DEVELOPER_NAME', 'FONHOUO GAUS'),
+        'url' => env('DEVELOPER_URL', 'https://moafogaus.abrdns.com/'),
+    ],
+
 ];
