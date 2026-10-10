@@ -64,4 +64,18 @@ class Book extends Model
     {
         return $this->hasMany(Download::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function isPurchasedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasPurchased($this);
+    }
 }

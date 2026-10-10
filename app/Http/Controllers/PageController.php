@@ -6,6 +6,7 @@ use App\Mail\ContactSubmittedMail;
 use App\Models\Book;
 use App\Models\Contact;
 use App\Models\Download;
+use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -97,11 +98,14 @@ class PageController extends Controller
         $user = auth()->user();
 
         if (! $user) {
-            return redirect()->route('login')->with('info', 'Veuillez vous connecter pour consulter vos livres.');
+            return redirect()->guest(route('login'))->with('info', 'Veuillez vous connecter pour consulter vos livres.');
         }
 
-        $downloadedBookIds = Download::where('user_id', $user->id)->pluck('book_id')->unique();
-        $books = Book::with('category')->whereIn('id', $downloadedBookIds)->get();
+        $downloadedBookIds = Download::where('user_id', $user->id)->pluck('book_id');
+        $purchasedBookIds = Payment::where('user_id', $user->id)->where('status', 'success')->pluck('book_id');
+        $allBookIds = $downloadedBookIds->concat($purchasedBookIds)->unique();
+
+        $books = Book::with('category')->whereIn('id', $allBookIds)->get();
 
         return view('home.pages.my_books', compact('books'));
     }

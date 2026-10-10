@@ -43,9 +43,27 @@ class User extends Authenticatable
         return $this->hasMany(Download::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function createdBooks(): HasMany
     {
         return $this->hasMany(Book::class, 'user_id');
+    }
+
+    /**
+     * Check if user has purchased a specific book.
+     */
+    public function hasPurchased(Book|int $book): bool
+    {
+        $bookId = $book instanceof Book ? $book->id : (int) $book;
+
+        return $this->payments()
+            ->where('book_id', $bookId)
+            ->where('status', 'success')
+            ->exists();
     }
 
     /**

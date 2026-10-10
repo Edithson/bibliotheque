@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,11 @@ Route::post('/contact', [PageController::class, 'sendContact'])->name('contact.s
 Route::get('/my-books', [PageController::class, 'myBooks'])->name('my-books');
 Route::get('/books/{book:slug}', [BookController::class, 'shopShow'])->name('shop.books.show');
 Route::get('/books/{book:slug}/download', [BookController::class, 'download'])->name('books.download');
+
+// Monetbil Payment Routes
+Route::match(['get', 'post'], '/books/{book:slug}/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
+Route::match(['get', 'post'], '/payments/notify', [PaymentController::class, 'notify'])->name('payments.notify');
+Route::get('/payments/return', [PaymentController::class, 'return'])->name('payments.return');
 
 // Guest Auth Routes
 Route::middleware('guest')->group(function () {

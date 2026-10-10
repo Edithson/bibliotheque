@@ -110,6 +110,7 @@
             });
         })();
     </script>
+    <script type="text/javascript" src="https://fr.monetbil.com/widget/v2/monetbil.min.js"></script>
     @stack('scripts')
 </body>
 </html>
